@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FNU NOC/SOC — DITS Cyber Ops Dashboard v3</title>
+<link rel="icon" type="image/png" href="assets/fnu-official-logo.png">
+<link rel="apple-touch-icon" href="assets/fnu-official-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -863,6 +865,62 @@ footer a{color:var(--gold);}
         </div>
       </div>
 
+      <div class="g2">
+        <div class="panel">
+          <div class="panel-title">HIGH LEVEL REPORTS <span class="sbadge bc">SUMMARY</span></div>
+          <div class="admin-form">
+            <div class="g3" style="margin-bottom:0">
+              <div>
+                <label for="report-frequency">Frequency</label>
+                <select id="report-frequency" onchange="saveAdminSettings()">
+                  <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Quarterly</option><option>Yearly</option>
+                </select>
+              </div>
+              <div>
+                <label for="report-recipients">Recipients</label>
+                <input id="report-recipients" placeholder="noc@fnu.ac.fj, cio@fnu.ac.fj" oninput="saveAdminSettings()">
+              </div>
+              <div>
+                <label for="report-format">Format</label>
+                <select id="report-format" onchange="saveAdminSettings()"><option>Executive Summary</option><option>Technical Summary</option><option>Board Brief</option></select>
+              </div>
+            </div>
+            <div class="admin-actions">
+              <button class="admin-btn" onclick="generateHighLevelReport()">GENERATE REPORT</button>
+              <button class="admin-btn alt" onclick="downloadReport()">DOWNLOAD TXT</button>
+              <button class="admin-btn alt" onclick="openReportEmail()">EMAIL DRAFT</button>
+            </div>
+            <textarea id="report-output" readonly placeholder="Generated high-level report will appear here."></textarea>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">CRITICAL EMAIL ALERTS <span class="sbadge br">INCIDENTS</span></div>
+          <div class="notice" style="margin-bottom:10px">
+            Static hosting cannot send SMTP directly. Use the webhook URL for Power Automate, Logic Apps, Zapier, Make, EmailJS proxy, or an internal mail relay.
+          </div>
+          <div class="admin-form">
+            <div>
+              <label for="alert-emails">Critical Alert Emails</label>
+              <input id="alert-emails" placeholder="soc@fnu.ac.fj, helpdesk@fnu.ac.fj" oninput="saveAdminSettings()">
+            </div>
+            <div>
+              <label for="alert-webhook">Email/Webhook Endpoint</label>
+              <input id="alert-webhook" placeholder="https://prod-xx.logic.azure.com/... or mail relay endpoint" oninput="saveAdminSettings()">
+            </div>
+            <div>
+              <label for="alert-min-severity">Minimum Severity</label>
+              <select id="alert-min-severity" onchange="saveAdminSettings()"><option>CRIT</option><option>WARN</option></select>
+            </div>
+            <div class="admin-actions">
+              <button class="admin-btn" onclick="sendCriticalAlertDigest()">SEND CRITICAL DIGEST</button>
+              <button class="admin-btn alt" onclick="openCriticalAlertEmail()">OPEN EMAIL DRAFT</button>
+              <span id="alert-send-result" class="cdim" style="font-family:var(--mono);font-size:10px"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-title">ADMIN AUDIT LOG <span class="sbadge bgold">LOCAL</span></div>
         <div id="admin-audit" class="log-stream" style="height:190px"></div>
@@ -1103,6 +1161,8 @@ const DEFAULT_ADMIN_CONFIG={
   banner:"",
   refreshSeconds:60,
   thresholds:{cpu:70,disk:80,wan:85},
+  reports:{frequency:"Daily",recipients:"",format:"Executive Summary",lastReport:""},
+  emailAlerts:{emails:"",webhook:"",minSeverity:"CRIT"},
   audit:[]
 };
 
@@ -1115,6 +1175,8 @@ function loadAdminConfig(){
     const saved=JSON.parse(localStorage.getItem(ADMIN_STORAGE_KEY)||"{}");
     const merged={...cloneConfig(DEFAULT_ADMIN_CONFIG),...saved};
     merged.thresholds={...DEFAULT_ADMIN_CONFIG.thresholds,...(saved.thresholds||{})};
+    merged.reports={...DEFAULT_ADMIN_CONFIG.reports,...(saved.reports||{})};
+    merged.emailAlerts={...DEFAULT_ADMIN_CONFIG.emailAlerts,...(saved.emailAlerts||{})};
     merged.visibleTabs=Array.isArray(saved.visibleTabs)?saved.visibleTabs:DEFAULT_ADMIN_CONFIG.visibleTabs;
     merged.connectors=Array.isArray(saved.connectors)?saved.connectors:[];
     merged.audit=Array.isArray(saved.audit)?saved.audit:[];
@@ -1163,6 +1225,13 @@ function renderAdmin(){
   document.getElementById("threshold-cpu").value=cfg.thresholds.cpu;
   document.getElementById("threshold-disk").value=cfg.thresholds.disk;
   document.getElementById("threshold-wan").value=cfg.thresholds.wan;
+  document.getElementById("report-frequency").value=cfg.reports.frequency;
+  document.getElementById("report-recipients").value=cfg.reports.recipients;
+  document.getElementById("report-format").value=cfg.reports.format;
+  document.getElementById("report-output").value=cfg.reports.lastReport||"";
+  document.getElementById("alert-emails").value=cfg.emailAlerts.emails;
+  document.getElementById("alert-webhook").value=cfg.emailAlerts.webhook;
+  document.getElementById("alert-min-severity").value=cfg.emailAlerts.minSeverity;
   renderVisibilityList(cfg);
   renderConnectorList(cfg);
   renderAuditLog(cfg);
@@ -1204,6 +1273,17 @@ function saveAdminSettings(){
     cpu:Number(document.getElementById("threshold-cpu").value)||70,
     disk:Number(document.getElementById("threshold-disk").value)||80,
     wan:Number(document.getElementById("threshold-wan").value)||85
+  };
+  cfg.reports={
+    ...cfg.reports,
+    frequency:document.getElementById("report-frequency").value,
+    recipients:document.getElementById("report-recipients").value.trim(),
+    format:document.getElementById("report-format").value
+  };
+  cfg.emailAlerts={
+    emails:document.getElementById("alert-emails").value.trim(),
+    webhook:document.getElementById("alert-webhook").value.trim(),
+    minSeverity:document.getElementById("alert-min-severity").value
   };
   storeAdminConfig(cfg);
   addAudit("Administration settings updated");
@@ -1383,6 +1463,128 @@ function getApiContext(){
   const active=cfg.connectors.filter(c=>c.enabled);
   if(!active.length)return "No external API connectors configured.";
   return active.map(c=>`${c.name} (${c.platform}) target=${c.target}, status=${c.lastStatus}, notes=${c.notes||"none"}`).join("; ");
+}
+
+function incidentAnalysis(alert){
+  const text=`${alert.msg} ${alert.sub}`.toLowerCase();
+  if(text.includes("phishing")||text.includes("mfa")){
+    return {root:"Targeted credential phishing or MFA fatigue/bypass attempt against staff identities.",solution:"Keep affected accounts locked until review, revoke sessions, reset passwords, enforce MFA re-registration, block indicators in mail security, and run awareness follow-up for targeted users."};
+  }
+  if(text.includes("exchange")||text.includes("ms365")){
+    return {root:"Microsoft 365 service degradation or tenant-side mail flow dependency issue.",solution:"Track Microsoft incident reference, enable alternate communication channels, validate mail queues/connectors, and notify stakeholders of expected impact window."};
+  }
+  if(text.includes("wan")||text.includes("utilisation")){
+    return {root:"Sustained WAN saturation, likely caused by peak student traffic, backup sync, video sessions, or unmanaged bulk transfers.",solution:"Inspect top talkers, apply QoS/throttling, defer non-critical transfers, and review bandwidth upgrade or shaping policy for recurring congestion."};
+  }
+  if(text.includes("moodle")||text.includes("storage")){
+    return {root:"Application storage growth approaching warning threshold.",solution:"Archive old course content, expand storage allocation, clear temporary files, and set capacity trend alerts before 85%."};
+  }
+  if(text.includes("gp lab")||text.includes("nodes offline")||text.includes("switch")){
+    return {root:"Access switch port block or hardware fault affecting multiple lab endpoints.",solution:"Check switch port status and PoE, reseat uplinks, inspect patch panel, move affected nodes to spare ports, and replace switch module if errors persist."};
+  }
+  if(text.includes("printer")||text.includes("toner")){
+    return {root:"Consumable depletion or local printer fault.",solution:"Replace toner, verify device network reachability, restart print service, and update ticket with expected restoration time."};
+  }
+  if(text.includes("cctv")||text.includes("camera")){
+    return {root:"Camera/NVR connectivity, power, or local network issue.",solution:"Check PoE switch, camera link state, NVR channel status, and dispatch facilities support if physical access is required."};
+  }
+  return {root:"Operational anomaly requiring correlation across network, endpoint, and service telemetry.",solution:"Correlate logs, identify affected users/assets, isolate impacted segment if needed, and update incident owner with next action and ETA."};
+}
+
+function reportWindowText(freq){
+  const now=new Date();
+  if(freq==="Daily")return `Daily operational report for ${now.toLocaleDateString()}`;
+  if(freq==="Weekly")return `Weekly operational report ending ${now.toLocaleDateString()}`;
+  if(freq==="Monthly")return `Monthly operational report for ${now.toLocaleString(undefined,{month:"long",year:"numeric"})}`;
+  if(freq==="Quarterly")return `Quarterly operational report for Q${Math.floor(now.getMonth()/3)+1} ${now.getFullYear()}`;
+  return `Yearly operational report for ${now.getFullYear()}`;
+}
+function generateReportText(){
+  const cfg=loadAdminConfig();
+  const crit=ALERTS.filter(a=>a.sev==="CRIT");
+  const warn=ALERTS.filter(a=>a.sev==="WARN");
+  const connectors=cfg.connectors.filter(c=>c.enabled);
+  const offline=ALL_ENDPOINTS.filter(e=>e.status==="OFFLINE").length;
+  const warnEp=ALL_ENDPOINTS.filter(e=>e.status==="WARN"||e.status==="IDLE").length;
+  const highWan=CAMPUSES.filter(c=>c.wan.includes("87%")).map(c=>c.name).join(", ")||"None";
+  const topRisks=ALERTS.filter(a=>a.sev==="CRIT"||a.sev==="WARN").slice(0,5).map(a=>{
+    const detail=incidentAnalysis(a);
+    return `- ${a.sev}: ${a.msg} (${a.sub})\n  Likely root cause: ${detail.root}\n  Recommended solution: ${detail.solution}`;
+  }).join("\n");
+  return `${reportWindowText(cfg.reports.frequency)}\nFNU NOC/SOC - ${cfg.reports.format}\nGenerated: ${new Date().toLocaleString()}\nRecipients: ${cfg.reports.recipients||"Not configured"}\n\nExecutive Summary\n- Overall uptime remains at 99.1% with 1,198 of 1,284 devices online.\n- Current risk level is elevated: ${crit.length} critical incidents and ${warn.length} warnings are active.\n- Endpoint health: ${offline} offline endpoints and ${warnEp} warn/idle endpoints require follow-up.\n- WAN pressure: ${highWan} requires capacity and top-talker review.\n- External API feeds configured: ${connectors.length?connectors.map(c=>`${c.name} (${c.platform}: ${c.lastStatus})`).join(", "):"None"}.\n\nKey Incidents, Root Cause and Recommended Action\n${topRisks}\n\nOperational Priorities\n1. Resolve CRIT alerts first: phishing/MFA, Microsoft 365 degradation, and GP Lab Nadi switch fault.\n2. Review WAN utilisation and Moodle storage before thresholds are breached.\n3. Confirm all configured API connectors are tested and mapped to dashboard targets.\n4. Send stakeholder update after incident owner, ETA, and service impact are confirmed.\n\nManagement Summary\nServices are operating with acceptable availability, but cyber and infrastructure warnings require active management. Immediate focus should remain on identity protection, degraded cloud email service, and access-layer faults affecting teaching labs.`;
+}
+function generateHighLevelReport(){
+  const cfg=loadAdminConfig();
+  cfg.reports.lastReport=generateReportText();
+  storeAdminConfig(cfg);
+  document.getElementById("report-output").value=cfg.reports.lastReport;
+  addAudit(`${cfg.reports.frequency} high-level report generated`);
+  renderAdmin();
+}
+function downloadReport(){
+  const cfg=loadAdminConfig();
+  const report=cfg.reports.lastReport||generateReportText();
+  const blob=new Blob([report],{type:"text/plain"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`fnu-noc-soc-${(cfg.reports.frequency||"report").toLowerCase()}-report.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  addAudit("Downloaded high-level report");
+  renderAdmin();
+}
+function openReportEmail(){
+  const cfg=loadAdminConfig();
+  const report=cfg.reports.lastReport||generateReportText();
+  const subject=encodeURIComponent(`FNU NOC/SOC ${cfg.reports.frequency} High-Level Report`);
+  const body=encodeURIComponent(report);
+  window.location.href=`mailto:${encodeURIComponent(cfg.reports.recipients||"")}?subject=${subject}&body=${body}`;
+  addAudit("Opened report email draft");
+  renderAdmin();
+}
+function criticalAlertText(){
+  const cfg=loadAdminConfig();
+  const min=cfg.emailAlerts.minSeverity;
+  const alerts=ALERTS.filter(a=>a.sev==="CRIT"||(min==="WARN"&&a.sev==="WARN"));
+  return alerts.map(a=>{
+    const detail=incidentAnalysis(a);
+    return `Severity: ${a.sev}\nTime: ${a.time}\nIssue: ${a.msg}\nDetails: ${a.sub}\nPossible root cause: ${detail.root}\nRecommended solution: ${detail.solution}`;
+  }).join("\n\n---\n\n");
+}
+async function sendCriticalAlertDigest(){
+  const cfg=loadAdminConfig();
+  const out=document.getElementById("alert-send-result");
+  const payload={
+    to:cfg.emailAlerts.emails,
+    subject:`FNU NOC/SOC Critical Incident Digest - ${new Date().toLocaleString()}`,
+    body:criticalAlertText(),
+    severity:cfg.emailAlerts.minSeverity,
+    source:"FNU NOC/SOC Dashboard"
+  };
+  if(!cfg.emailAlerts.webhook){
+    out.textContent="No webhook configured; opening email draft";
+    openCriticalAlertEmail();
+    return;
+  }
+  out.textContent="Sending...";
+  try{
+    const res=await fetch(cfg.emailAlerts.webhook,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    out.textContent=res.ok?`Sent ${res.status}`:`Webhook returned ${res.status}`;
+    addAudit(`Critical alert digest sent via webhook (${out.textContent})`);
+  }catch(e){
+    out.textContent="Webhook blocked by CORS/network";
+    addAudit("Critical alert webhook failed");
+  }
+  renderAdmin();
+}
+function openCriticalAlertEmail(){
+  const cfg=loadAdminConfig();
+  const subject=encodeURIComponent("FNU NOC/SOC Critical Incident Alert");
+  const body=encodeURIComponent(criticalAlertText());
+  window.location.href=`mailto:${encodeURIComponent(cfg.emailAlerts.emails||"")}?subject=${subject}&body=${body}`;
+  addAudit("Opened critical alert email draft");
+  renderAdmin();
 }
 
 function renderNetDev(){
