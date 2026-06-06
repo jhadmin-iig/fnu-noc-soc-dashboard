@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FNU NOC/SOC — DITS Cyber Ops Dashboard v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C8A84B;--gold-dim:#8B7235;--green:#00FF88;--green-dim:#00994d;
+  --red:#FF3355;--amber:#FFB800;--cyan:#00D4FF;--purple:#BB86FC;
+  --bg:#000d1a;--panel:rgba(0,33,71,0.75);--border:rgba(200,168,75,0.25);
+  --text:#ccd6f6;--dim:#7a8aaa;
+  --mono:'Share Tech Mono',monospace;--head:'Orbitron',sans-serif;--body:'Rajdhani',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9999;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,100,200,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,100,200,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+@keyframes ticker{0%{transform:translateX(100vw)}100%{transform:translateX(-200%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.pulse-dot{animation:pulse 1.4s ease-in-out infinite;}
+.spin{animation:spin 1s linear infinite;display:inline-block;}
+.fade-up{animation:fadeUp .35s ease forwards;}
+
+/* LAYOUT */
+#app{position:relative;z-index:1;}
+header{position:sticky;top:0;z-index:100;background:rgba(0,10,25,0.97);border-bottom:2px solid var(--gold);box-shadow:0 0 30px rgba(200,168,75,0.2);padding:0 16px;}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:8px 0 5px;gap:16px;flex-wrap:wrap;}
+.logo-group{display:flex;align-items:center;gap:14px;min-width:280px;}
+.fnu-logo-img{width:220px;max-width:42vw;height:auto;display:block;filter:drop-shadow(0 0 10px rgba(0,212,255,0.25));}
+.brand-divider{width:1px;height:40px;background:linear-gradient(180deg,transparent,var(--gold),transparent);opacity:.65;}
+.logo-title{font-family:var(--head);font-size:15px;font-weight:900;color:var(--gold);letter-spacing:3px;text-shadow:0 0 20px rgba(200,168,75,0.5);white-space:nowrap;}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:3px;margin-top:3px;}
+.hstats{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.hstat .v{font-family:var(--head);font-size:16px;font-weight:700;display:block;}
+.hstat .l{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;}
+.clocks{display:flex;gap:14px;align-items:center;}
+.clock-tz{font-family:var(--mono);font-size:9px;color:var(--dim);}
+.clock-val{font-family:var(--head);font-size:14px;letter-spacing:2px;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:2px;font-family:var(--mono);font-size:10px;font-weight:bold;letter-spacing:2px;border:1px solid var(--green);background:rgba(0,255,136,0.1);color:var(--green);}
+.ticker-bar{overflow:hidden;padding:5px 0;background:rgba(0,33,71,0.6);border-top:1px solid var(--border);}
+.ticker-inner{display:flex;gap:80px;white-space:nowrap;animation:ticker 90s linear infinite;font-family:var(--mono);font-size:10px;color:var(--gold);}
+.ticker-inner .td{color:var(--dim);}
+
+/* NAV */
+.nav-tabs{display:flex;gap:4px;padding:6px 16px;background:rgba(0,15,35,0.95);border-bottom:1px solid rgba(200,168,75,0.15);overflow-x:auto;position:sticky;top:82px;z-index:99;}
+.nav-tabs::-webkit-scrollbar{height:2px;}
+.tab-btn{font-family:var(--head);font-size:9px;letter-spacing:2px;padding:5px 10px;background:transparent;border:1px solid rgba(200,168,75,0.2);color:var(--dim);cursor:pointer;border-radius:2px;white-space:nowrap;transition:all .2s;}
+.tab-btn:hover,.tab-btn.active{background:rgba(200,168,75,0.12);color:var(--gold);border-color:var(--gold-dim);}
+
+/* MAIN */
+main{padding:14px 16px 40px;max-width:1900px;margin:0 auto;}
+.section{display:none;}.section.active{display:block;animation:fadeUp .35s ease forwards;}
+.section-title{display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:4px;}
+.section-title span{font-family:var(--head);font-size:11px;font-weight:700;color:var(--gold);letter-spacing:3px;white-space:nowrap;}
+.section-title .badge{font-family:var(--mono);font-size:8px;padding:2px 7px;border:1px solid var(--cyan);color:var(--cyan);letter-spacing:2px;border-radius:2px;}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--gold-dim),transparent);}
+
+/* PANEL */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px;position:relative;overflow:hidden;transition:border-color .3s;}
+.panel:hover{border-color:rgba(200,168,75,.5);}
+.panel::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--gold),transparent);}
+.panel-title{font-family:var(--head);font-size:10px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:14px;}
+@media(max-width:1200px){.g4{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(2,1fr);}.g21{grid-template-columns:1fr;}}
+@media(max-width:700px){.g4,.g3,.g2{grid-template-columns:1fr;}}
+@media(max-width:760px){.header-top{align-items:flex-start}.logo-group{width:100%;min-width:0;gap:10px}.fnu-logo-img{width:170px;max-width:56vw}.brand-divider{height:34px}.logo-title{font-size:12px;letter-spacing:2px}.logo-sub{font-size:8px;letter-spacing:2px}.nav-tabs{top:124px}}
+
+/* METRIC */
+.metric{text-align:center;padding:8px;}
+.metric .mv{font-family:var(--head);font-size:24px;font-weight:900;display:block;line-height:1;}
+.metric .ml{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px;letter-spacing:1px;}
+
+/* BADGE */
+.sbadge{display:inline-block;padding:2px 7px;border-radius:2px;font-family:var(--mono);font-size:9px;font-weight:bold;letter-spacing:1px;}
+.bg{background:rgba(0,255,136,.12);color:var(--green);border:1px solid var(--green-dim);}
+.ba{background:rgba(255,184,0,.12);color:var(--amber);border:1px solid #7a5800;}
+.br{background:rgba(255,51,85,.12);color:var(--red);border:1px solid #99001f;}
+.bc{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid #0066aa;}
+.bgold{background:rgba(200,168,75,.12);color:var(--gold);border:1px solid var(--gold-dim);}
+.boff{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid rgba(255,255,255,.1);}
+
+/* SVC ROW */
+.svc-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(200,168,75,.07);gap:6px;}
+.svc-row:last-child{border-bottom:none;}
+.svc-name{font-weight:600;font-size:12px;flex:1;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{font-family:var(--head);font-size:9px;letter-spacing:2px;color:var(--gold);padding:5px 7px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+td{padding:5px 7px;border-bottom:1px solid rgba(200,168,75,.06);font-family:var(--mono);font-size:10px;vertical-align:middle;}
+tr:hover td{background:rgba(200,168,75,.04);}
+
+/* PBAR */
+.pbar-wrap{margin:3px 0;}
+.pbar-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:3px;}
+.pbar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:3px;transition:width 1s;}
+
+/* CAMPUS CARDS */
+.campus-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:900px){.campus-grid{grid-template-columns:repeat(2,1fr);}}
+.campus-card{background:rgba(0,33,71,.5);border:1px solid var(--border);border-radius:4px;padding:12px;transition:all .3s;}
+.campus-card:hover{border-color:var(--gold);box-shadow:0 0 20px rgba(200,168,75,.1);transform:translateY(-2px);}
+.campus-card .cn{font-family:var(--head);font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:2px;}
+.campus-card .cl{font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:9px;}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.cr:last-child{border-bottom:none;}
+.cr .crl{font-family:var(--mono);font-size:9px;color:var(--dim);}
+.cr .crv{font-family:var(--mono);font-size:9px;font-weight:bold;}
+
+/* GP LABS */
+.gplab-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+@media(max-width:900px){.gplab-grid{grid-template-columns:repeat(2,1fr);}}
+.gplab-card{background:rgba(0,20,50,.5);border:1px solid var(--border);border-radius:3px;padding:10px;text-align:center;}
+.gplab-card .gpn{font-family:var(--head);font-size:9px;color:var(--gold);letter-spacing:1px;margin-bottom:5px;}
+.gplab-card .gpc{font-family:var(--head);font-size:20px;font-weight:900;display:block;}
+.gplab-card .gps{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px;}
+
+/* ALERTS */
+.alert-item{display:flex;gap:8px;padding:7px 9px;border-radius:3px;margin-bottom:5px;border-left:3px solid;}
+.alert-item.crit{background:rgba(255,51,85,.08);border-color:var(--red);}
+.alert-item.warn{background:rgba(255,184,0,.08);border-color:var(--amber);}
+.alert-item.info{background:rgba(0,212,255,.08);border-color:var(--cyan);}
+.alert-item.ok{background:rgba(0,255,136,.08);border-color:var(--green);}
+.alert-time{font-family:var(--mono);font-size:9px;color:var(--dim);min-width:44px;}
+.alert-msg{font-weight:600;font-size:12px;flex:1;}
+.alert-sub{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px;}
+
+/* LOG */
+.log-stream{height:360px;overflow-y:auto;padding-right:4px;}
+.log-entry{display:flex;gap:8px;font-family:var(--mono);font-size:10px;line-height:1.8;}
+.log-ts{color:var(--dim);min-width:60px;}
+.log-si{color:var(--cyan);min-width:20px;}
+.log-sw{color:var(--amber);min-width:20px;}
+.log-se{color:var(--red);min-width:20px;}
+.log-src{color:var(--gold);min-width:110px;}
+
+/* SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.search-bar input,.search-bar select{background:rgba(0,20,50,.8);border:1px solid var(--border);border-radius:3px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;}
+.search-bar input{flex:1;min-width:160px;}
+.search-bar input:focus,.search-bar select:focus{border-color:var(--gold);}
+.search-bar button{background:rgba(200,168,75,.15);border:1px solid var(--gold-dim);border-radius:3px;padding:6px 14px;color:var(--gold);font-family:var(--head);font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;}
+.search-bar button:hover{background:rgba(200,168,75,.25);}
+
+/* AI CODEX */
+#codex-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;min-height:200px;max-height:340px;}
+.msg-ai,.msg-user{padding:8px 12px;border-radius:4px;font-size:12px;line-height:1.6;max-width:88%;}
+.msg-ai{background:rgba(0,33,71,.8);border:1px solid var(--border);border-radius:2px 8px 8px 8px;align-self:flex-start;}
+.msg-user{background:rgba(200,168,75,.12);border:1px solid var(--gold-dim);border-radius:8px 8px 2px 8px;align-self:flex-end;color:var(--gold);}
+.quick-prompts{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.qp-btn{font-family:var(--mono);font-size:9px;padding:4px 10px;background:rgba(0,33,71,.6);border:1px solid var(--border);color:var(--dim);cursor:pointer;border-radius:2px;transition:all .2s;letter-spacing:1px;}
+.qp-btn:hover{color:var(--gold);border-color:var(--gold-dim);}
+.codex-input-row{display:flex;gap:6px;}
+.codex-input-row input{flex:1;background:rgba(0,20,50,.8);border:1px solid var(--border);border-radius:3px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;}
+.codex-input-row input:focus{border-color:var(--gold);}
+.codex-send{background:rgba(200,168,75,.15);border:1px solid var(--gold-dim);border-radius:3px;padding:7px 16px;color:var(--gold);font-family:var(--head);font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.codex-send:hover{background:rgba(200,168,75,.25);}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:14px 16px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px;position:relative;z-index:1;}
+footer a{color:var(--gold);}
+
+/* COLORS */
+.cg{color:var(--green);} .ca{color:var(--amber);} .cr2{color:var(--red);} .cc{color:var(--cyan);} .cgold{color:var(--gold);} .cp{color:var(--purple);} .cdim{color:var(--dim);}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div class="logo-group">
+      <img class="fnu-logo-img" src="assets/fnu-official-logo.png" alt="Fiji National University">
+      <div class="brand-divider" aria-hidden="true"></div>
+      <div>
+        <div class="logo-title">FNU NOC / SOC</div>
+        <div class="logo-sub">DITS CYBER OPS CENTER &bull; FIJI NATIONAL UNIVERSITY</div>
+      </div>
+    </div>
+    <div class="hstats">
+      <div class="hstat"><span class="v cgold">1,284</span><span class="l">TOTAL DEVICES</span></div>
+      <div class="hstat"><span class="v cg">1,198</span><span class="l">ONLINE</span></div>
+      <div class="hstat"><span class="v ca">61</span><span class="l">WARN/IDLE</span></div>
+      <div class="hstat"><span class="v cr2">25</span><span class="l">OFFLINE</span></div>
+      <div class="hstat"><span class="v cc">47</span><span class="l">OPEN TICKETS</span></div>
+      <div class="hstat"><span class="v cr2">12</span><span class="l">THREATS</span></div>
+      <div class="hstat"><span class="v cg">99.1%</span><span class="l">UPTIME</span></div>
+    </div>
+    <div class="clocks">
+      <div><div class="clock-tz">FJT (UTC+12)</div><div class="clock-val cg" id="clk-fjt">--:--:--</div></div>
+      <div><div class="clock-tz">UTC</div><div class="clock-val cgold" id="clk-utc">--:--:--</div></div>
+      <div class="pill"><div class="pulse-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);"></div>NOMINAL</div>
+    </div>
+  </div>
+  <div class="ticker-bar">
+    <div class="ticker-inner">
+      <span class="td">[WARN]</span> Lautoka WAN 87% utilisation &mdash; throttling active &nbsp;&nbsp;
+      <span class="td">[CRIT]</span> Phishing: 3 staff accounts targeted &mdash; MFA review required &nbsp;&nbsp;
+      <span class="td">[INFO]</span> Moodle LMS: 1,240 active sessions &nbsp;&nbsp;
+      <span class="td">[INFO]</span> EduRoam avg 24ms &mdash; all campuses nominal &nbsp;&nbsp;
+      <span class="td">[WARN]</span> MS365 Exchange Online degraded &mdash; incident MO-789432 &nbsp;&nbsp;
+      <span class="td">[WARN]</span> GP Lab Nadi: 7 nodes offline &mdash; switch port fault &nbsp;&nbsp;
+      <span class="td">[INFO]</span> Nutanix cluster: HEALTHY &mdash; all nodes responding &nbsp;&nbsp;
+      <span class="td">[INFO]</span> CCTV: 144/148 cameras active across all campuses &nbsp;&nbsp;
+      <span class="td">[WARN]</span> PRINT-LKA-02 offline &mdash; toner low &nbsp;&nbsp;
+      <span class="td">[INFO]</span> VoIP: 384 extensions registered &mdash; FreePBX ONLINE &nbsp;&nbsp;
+      <span class="td">[INFO]</span> FNU SOC: 0 confirmed breaches this week &nbsp;&nbsp;
+    </div>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <button class="tab-btn active" onclick="showTab('overview')">OVERVIEW</button>
+  <button class="tab-btn" onclick="showTab('codex')">&#x1F916; AI ANALYST</button>
+  <button class="tab-btn" onclick="showTab('endpoints')">ENDPOINTS</button>
+  <button class="tab-btn" onclick="showTab('netdev')">NETWORK DEVICES</button>
+  <button class="tab-btn" onclick="showTab('vlans')">VLANs</button>
+  <button class="tab-btn" onclick="showTab('servers')">SERVERS</button>
+  <button class="tab-btn" onclick="showTab('wireless')">WIRELESS / APs</button>
+  <button class="tab-btn" onclick="showTab('voip')">VoIP</button>
+  <button class="tab-btn" onclick="showTab('printers')">PRINTERS</button>
+  <button class="tab-btn" onclick="showTab('cctv')">CCTV / IoT</button>
+  <button class="tab-btn" onclick="showTab('campus')">CAMPUS NET</button>
+  <button class="tab-btn" onclick="showTab('gplabs')">GP LABS</button>
+  <button class="tab-btn" onclick="showTab('soc')">SOC / THREATS</button>
+  <button class="tab-btn" onclick="showTab('alerts')">ALERTS</button>
+  <button class="tab-btn" onclick="showTab('logs')">SYSLOG</button>
+  <button class="tab-btn" onclick="showTab('topology')">TOPOLOGY</button>
+</nav>
+
+<main>
+
+<!-- ═══ OVERVIEW ═══ -->
+<div id="tab-overview" class="section active">
+  <div class="section-title"><span>NETWORK OVERVIEW</span><span class="badge">LIVE</span></div>
+  <div class="g4">
+    <div class="panel">
+      <div class="panel-title">DEVICE INVENTORY <div class="live-dot pulse-dot"></div></div>
+      <div class="g2" style="gap:6px;margin-bottom:10px">
+        <div class="metric"><span class="mv cgold">1,284</span><div class="ml">TOTAL</div></div>
+        <div class="metric"><span class="mv cg">1,198</span><div class="ml">ONLINE</div></div>
+        <div class="metric"><span class="mv ca">61</span><div class="ml">WARN/IDLE</div></div>
+        <div class="metric"><span class="mv cr2">25</span><div class="ml">OFFLINE</div></div>
+      </div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Availability</span><span class="cg">93.3%</span></div><div class="pbar"><div class="pbar-fill" style="width:93%;background:var(--green)"></div></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">DEVICE BREAKDOWN</div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Workstations/PCs</span><span class="cc">842</span></div><div class="pbar"><div class="pbar-fill" style="width:66%;background:var(--cyan)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Laptops</span><span class="cc">193</span></div><div class="pbar"><div class="pbar-fill" style="width:15%;background:var(--cyan)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Printers/MFDs</span><span class="ca">87</span></div><div class="pbar"><div class="pbar-fill" style="width:7%;background:var(--amber)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Wi-Fi APs</span><span class="cg">114</span></div><div class="pbar"><div class="pbar-fill" style="width:9%;background:var(--green)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>IP Cameras</span><span class="cr2">148</span></div><div class="pbar"><div class="pbar-fill" style="width:12%;background:var(--red)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>VoIP Phones</span><span class="cgold">384</span></div><div class="pbar"><div class="pbar-fill" style="width:30%;background:var(--gold)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Switches/Routers/FW</span><span class="cp">48</span></div><div class="pbar"><div class="pbar-fill" style="width:4%;background:var(--purple)"></div></div></div>
+      <div class="pbar-wrap"><div class="pbar-label"><span>Servers &amp; VMs</span><span class="cp">68</span></div><div class="pbar"><div class="pbar-fill" style="width:5%;background:var(--purple)"></div></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">NETWORK PERFORMANCE <div class="live-dot pulse-dot"></div></div>
+      <div class="g2" style="gap:6px">
+        <div class="metric"><span class="mv cg" style="font-size:20px">24ms</span><div class="ml">LAN AVG</div></div>
+        <div class="metric"><span class="mv ca" style="font-size:20px">58ms</span><div class="ml">WAN AVG</div></div>
+        <div class="metric"><span class="mv cg" style="font-size:18px">0.09%</span><div class="ml">PKT LOSS</div></div>
+        <div class="metric"><span class="mv cc" style="font-size:20px">2.1ms</span><div class="ml">JITTER</div></div>
+        <div class="metric"><span class="mv cgold" style="font-size:20px">72M</span><div class="ml">BW IN</div></div>
+        <div class="metric"><span class="mv cgold" style="font-size:20px">48M</span><div class="ml">BW OUT</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">SOC SNAPSHOT</div>
+      <div class="svc-row"><span class="svc-name">Threat Level</span><span class="sbadge ba">ELEVATED</span></div>
+      <div class="svc-row"><span class="svc-name">Threats Blocked</span><span class="cg" style="font-family:var(--mono)">1,247</span></div>
+      <div class="svc-row"><span class="svc-name">Phishing Attempts</span><span class="ca" style="font-family:var(--mono)">34</span></div>
+      <div class="svc-row"><span class="svc-name">Malware Blocked</span><span class="cr2" style="font-family:var(--mono)">8</span></div>
+      <div class="svc-row"><span class="svc-name">Brute Force</span><span class="ca" style="font-family:var(--mono)">156</span></div>
+      <div class="svc-row"><span class="svc-name">Confirmed Breaches</span><span class="cg" style="font-family:var(--mono)">0</span></div>
+      <div class="svc-row"><span class="svc-name">Open Tickets P1</span><span class="cr2" style="font-family:var(--mono)">3</span></div>
+      <div class="svc-row"><span class="svc-name">SLA Met</span><span class="cg" style="font-family:var(--mono)">91%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AI CODEX ═══ -->
+<div id="tab-codex" class="section">
+  <div class="section-title"><span>AI NOC/SOC ANALYST</span><span class="badge">CLAUDE SONNET 4</span></div>
+  <div class="panel" style="display:flex;flex-direction:column;height:540px">
+    <div class="panel-title">DITS AI ANALYST <div class="live-dot pulse-dot"></div></div>
+    <div style="margin-bottom:8px;padding:6px 10px;background:rgba(200,168,75,0.07);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:9px;color:var(--dim)">
+      &#x26A1; Full context: 1,284 devices &bull; 6 campuses &bull; 11 VLANs &bull; 68 servers &bull; 114 APs &bull; 148 cameras &bull; 87 printers &bull; 384 VoIP &bull; Live alerts
+    </div>
+    <div id="codex-messages">
+      <div class="msg-ai">
+        <strong style="color:var(--gold)">FNU NOC/SOC AI Analyst online.</strong><br><br>
+        I have full visibility of your network: <strong style="color:var(--gold)">1,284 devices</strong> across 6 campuses, all VLAN segments, server inventory, endpoint registry, alerts, and SOC telemetry.<br><br>
+        Ask me anything about the FNU network, or tap a quick prompt below.
+      </div>
+    </div>
+    <div class="quick-prompts" id="quick-prompts">
+      <button class="qp-btn" onclick="sendCodex('Summarise all active alerts and risk level')">Summarise active alerts</button>
+      <button class="qp-btn" onclick="sendCodex('Which campus has the highest threat exposure?')">Highest threat campus?</button>
+      <button class="qp-btn" onclick="sendCodex('Analyse Lautoka WAN degradation root cause')">Lautoka WAN root cause</button>
+      <button class="qp-btn" onclick="sendCodex('List all OFFLINE devices across all campuses')">List OFFLINE devices</button>
+      <button class="qp-btn" onclick="sendCodex('Generate an executive summary for the SLT')">SLT executive summary</button>
+      <button class="qp-btn" onclick="sendCodex('What is the current SOC threat status?')">SOC threat status</button>
+      <button class="qp-btn" onclick="sendCodex('Recommend actions for GP Lab Nadi issue')">GP Lab Nadi fix</button>
+      <button class="qp-btn" onclick="sendCodex('Is the Nutanix cluster at risk?')">Nutanix cluster risk</button>
+    </div>
+    <div class="codex-input-row">
+      <input id="codex-input" type="text" placeholder="Ask the AI analyst about the FNU network..." onkeydown="if(event.key==='Enter')sendCodexInput()">
+      <button class="codex-send" onclick="sendCodexInput()">SEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ENDPOINTS ═══ -->
+<div id="tab-endpoints" class="section">
+  <div class="section-title"><span>ENDPOINT REGISTRY</span><span class="badge" id="ep-badge">LOADING</span></div>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-title">ALL CAMPUS ENDPOINTS <div class="live-dot pulse-dot"></div></div>
+    <div class="search-bar">
+      <input id="ep-q" type="text" placeholder="Search hostname, IP, MAC, user..." oninput="filterEP()">
+      <select id="ep-campus" onchange="filterEP()">
+        <option value="">ALL CAMPUSES</option>
+        <option>SUVA</option><option>LAUTOKA</option><option>LABASA</option>
+        <option>BA</option><option>NADI</option><option>KORONIVIA</option>
+      </select>
+      <select id="ep-type" onchange="filterEP()">
+        <option value="">ALL TYPES</option>
+        <option>Workstation</option><option>Laptop</option><option>GP Lab</option>
+      </select>
+      <select id="ep-status" onchange="filterEP()">
+        <option value="">ALL STATUS</option>
+        <option>ONLINE</option><option>OFFLINE</option><option>IDLE</option><option>WARN</option>
+      </select>
+      <button onclick="filterEP()">FILTER</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>#</th><th>HOSTNAME</th><th>IP ADDRESS</th><th>MAC ADDRESS</th><th>TYPE</th><th>CAMPUS</th><th>DEPT/LAB</th><th>OS</th><th>USER</th><th>STATUS</th><th>AV</th></tr></thead>
+        <tbody id="ep-tbody"></tbody>
+      </table>
+    </div>
+    <div id="ep-count" style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- ═══ NETWORK DEVICES ═══ -->
+<div id="tab-netdev" class="section">
+  <div class="section-title"><span>NETWORK DEVICES</span><span class="badge">48 DEVICES</span></div>
+  <div class="panel">
+    <div class="panel-title">ROUTERS, SWITCHES &amp; FIREWALLS</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>DEVICE</th><th>IP ADDRESS</th><th>ROLE / MODEL</th><th>CAMPUS</th><th>CPU %</th><th>STATUS</th></tr></thead>
+        <tbody id="netdev-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VLANs ═══ -->
+<div id="tab-vlans" class="section">
+  <div class="section-title"><span>VLAN SEGMENTS</span><span class="badge">11 VLANs</span></div>
+  <div class="panel">
+    <div class="panel-title">VLAN CONFIGURATION TABLE</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>VLAN ID</th><th>NAME</th><th>SUBNET</th><th>GATEWAY</th><th>DEVICES</th><th>PURPOSE</th><th>FIREWALL ZONE</th></tr></thead>
+        <tbody id="vlan-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SERVERS ═══ -->
+<div id="tab-servers" class="section">
+  <div class="section-title"><span>SERVERS &amp; VMs</span><span class="badge">68 INSTANCES</span></div>
+  <div class="panel">
+    <div class="panel-title">PHYSICAL &amp; VIRTUAL MACHINE INVENTORY</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>HOSTNAME</th><th>IP</th><th>ROLE</th><th>CPU%</th><th>RAM%</th><th>DISK%</th><th>STATUS</th></tr></thead>
+        <tbody id="srv-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WIRELESS ═══ -->
+<div id="tab-wireless" class="section">
+  <div class="section-title"><span>WIRELESS ACCESS POINTS</span><span class="badge">114 APs</span></div>
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-title">AP INVENTORY <div class="live-dot pulse-dot"></div></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>AP NAME</th><th>IP</th><th>MODEL</th><th>CAMPUS</th><th>LOCATION</th><th>CLIENTS</th><th>CH</th><th>SIGNAL</th><th>STATUS</th></tr></thead>
+        <tbody id="ap-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="panel">
+      <div class="panel-title">AP SUMMARY BY CAMPUS</div>
+      <div class="svc-row"><span class="svc-name">Suva (Nasinu)</span><span class="cg" style="font-family:var(--mono)">48/48</span></div>
+      <div class="svc-row"><span class="svc-name">Lautoka</span><span class="ca" style="font-family:var(--mono)">22/24</span></div>
+      <div class="svc-row"><span class="svc-name">Labasa</span><span class="cg" style="font-family:var(--mono)">14/14</span></div>
+      <div class="svc-row"><span class="svc-name">Ba</span><span class="cg" style="font-family:var(--mono)">10/10</span></div>
+      <div class="svc-row"><span class="svc-name">Nadi</span><span class="cg" style="font-family:var(--mono)">12/12</span></div>
+      <div class="svc-row"><span class="svc-name">Koronivia</span><span class="cg" style="font-family:var(--mono)">8/8</span></div>
+      <div class="svc-row"><span class="svc-name" style="font-weight:700">TOTAL</span><span class="cgold" style="font-family:var(--mono)">114/116</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">SSID STATUS</div>
+      <div class="svc-row"><span class="svc-name">FNU-EduRoam</span><span class="sbadge bg">ACTIVE</span></div>
+      <div class="svc-row"><span class="svc-name">FNU-Staff (802.1X)</span><span class="sbadge bg">ACTIVE</span></div>
+      <div class="svc-row"><span class="svc-name">FNU-Student</span><span class="sbadge bg">ACTIVE</span></div>
+      <div class="svc-row"><span class="svc-name">FNU-Guest</span><span class="sbadge bg">ACTIVE</span></div>
+      <div class="svc-row"><span class="svc-name">Wi-Fi Clients Now</span><span class="cc" style="font-family:var(--mono)">~2,740</span></div>
+      <div class="svc-row"><span class="svc-name">Rogue APs Detected</span><span class="cg" style="font-family:var(--mono)">0</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">EduRoam RADIUS</div>
+      <div class="svc-row"><span class="svc-name">VM-RADIUS-01</span><span class="sbadge bg">ONLINE</span></div>
+      <div class="svc-row"><span class="svc-name">Auth Success/min</span><span class="cg" style="font-family:var(--mono)">214</span></div>
+      <div class="svc-row"><span class="svc-name">Auth Failures/min</span><span class="ca" style="font-family:var(--mono)">8</span></div>
+      <div class="svc-row"><span class="svc-name">RADIUS Latency</span><span class="cg" style="font-family:var(--mono)">12ms</span></div>
+      <div class="svc-row"><span class="svc-name">Certificates</span><span class="cg" style="font-family:var(--mono)">VALID</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VoIP ═══ -->
+<div id="tab-voip" class="section">
+  <div class="section-title"><span>VoIP PHONES</span><span class="badge">384 EXTENSIONS</span></div>
+  <div class="g2">
+    <div class="panel">
+      <div class="panel-title">VoIP INFRASTRUCTURE</div>
+      <div class="svc-row"><span class="svc-name">FreePBX Gateway (VM-VOIP-GW)</span><span class="sbadge bg">ONLINE</span><span class="cdim" style="font-family:var(--mono);font-size:10px">10.50.1.80</span></div>
+      <div class="svc-row"><span class="svc-name">SIP Trunk &mdash; TFL PSTN</span><span class="sbadge bg">ACTIVE</span><span class="cdim" style="font-family:var(--mono);font-size:10px">24 ch</span></div>
+      <div class="svc-row"><span class="svc-name">SIP Trunk &mdash; Vodafone</span><span class="sbadge bg">ACTIVE</span><span class="cdim" style="font-family:var(--mono);font-size:10px">12 ch</span></div>
+      <div class="svc-row"><span class="svc-name">Registered Extensions</span><span class="cgold" style="font-family:var(--mono)">384/400</span></div>
+      <div class="svc-row"><span class="svc-name">Active Calls</span><span class="cc" style="font-family:var(--mono)" id="active-calls">14</span></div>
+      <div class="svc-row"><span class="svc-name">Call Quality (MOS)</span><span class="cg" style="font-family:var(--mono)">4.2</span></div>
+      <div class="svc-row"><span class="svc-name">QoS DSCP Marking</span><span class="sbadge bg">EF ENABLED</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">EXTENSION BLOCKS BY CAMPUS</div>
+      <table>
+        <thead><tr><th>CAMPUS</th><th>EXT RANGE</th><th>REGISTERED</th><th>MODEL</th><th>STATUS</th></tr></thead>
+        <tbody>
+          <tr><td>SUVA</td><td class="cc">1000&ndash;1199</td><td class="cg">192/200</td><td class="cdim">Yealink T46S</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>LAUTOKA</td><td class="cc">2000&ndash;2099</td><td class="cg">94/100</td><td class="cdim">Yealink T42S</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>LABASA</td><td class="cc">3000&ndash;3049</td><td class="cg">44/50</td><td class="cdim">Yealink T42S</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>BA</td><td class="cc">4000&ndash;4029</td><td class="ca">24/30</td><td class="cdim">Grandstream GXP</td><td><span class="sbadge ba">WARN</span></td></tr>
+          <tr><td>NADI</td><td class="cc">5000&ndash;5029</td><td class="cg">18/30</td><td class="cdim">Yealink T42S</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>KORONIVIA</td><td class="cc">6000&ndash;6019</td><td class="cg">12/20</td><td class="cdim">Grandstream GXP</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td class="cgold" style="font-weight:700">TOTAL</td><td></td><td class="cgold">384/400</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PRINTERS ═══ -->
+<div id="tab-printers" class="section">
+  <div class="section-title"><span>NETWORK PRINTERS &amp; MFDs</span><span class="badge">87 DEVICES</span></div>
+  <div class="panel">
+    <div class="panel-title">PRINTER / MFD INVENTORY <div class="live-dot pulse-dot"></div></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>DEVICE</th><th>IP</th><th>MODEL</th><th>CAMPUS</th><th>LOCATION</th><th>PAGES TODAY</th><th>TONER %</th><th>STATUS</th></tr></thead>
+        <tbody id="printer-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CCTV ═══ -->
+<div id="tab-cctv" class="section">
+  <div class="section-title"><span>CCTV CAMERAS &amp; IoT DEVICES</span><span class="badge">148 CAMERAS</span></div>
+  <div class="g2">
+    <div class="panel">
+      <div class="panel-title">IP CAMERA STATUS BY CAMPUS</div>
+      <table>
+        <thead><tr><th>CAMPUS</th><th>CAMERAS</th><th>ONLINE</th><th>OFFLINE</th><th>NVR IP</th><th>RETENTION</th><th>STATUS</th></tr></thead>
+        <tbody>
+          <tr><td>SUVA</td><td>62</td><td class="cg">60</td><td class="ca">2</td><td class="cc">10.50.1.90</td><td class="cdim">30 days</td><td><span class="sbadge ba">PARTIAL</span></td></tr>
+          <tr><td>LAUTOKA</td><td>28</td><td class="cg">28</td><td class="cg">0</td><td class="cc">10.1.50.90</td><td class="cdim">14 days</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>LABASA</td><td>20</td><td class="cg">20</td><td class="cg">0</td><td class="cc">10.2.50.90</td><td class="cdim">14 days</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>BA</td><td>14</td><td class="cg">14</td><td class="cg">0</td><td class="cc">10.3.50.90</td><td class="cdim">14 days</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>NADI</td><td>16</td><td class="cg">14</td><td class="ca">2</td><td class="cc">10.4.50.90</td><td class="cdim">14 days</td><td><span class="sbadge ba">PARTIAL</span></td></tr>
+          <tr><td>KORONIVIA</td><td>8</td><td class="cg">8</td><td class="cg">0</td><td class="cc">10.5.50.90</td><td class="cdim">14 days</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td class="cgold" style="font-weight:700">TOTAL</td><td>148</td><td class="cg">144</td><td class="ca">4</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">IoT &amp; OTHER CONNECTED DEVICES</div>
+      <table>
+        <thead><tr><th>DEVICE TYPE</th><th>COUNT</th><th>VLAN</th><th>ONLINE</th><th>STATUS</th></tr></thead>
+        <tbody>
+          <tr><td>IP Cameras (Dahua/Hikvision)</td><td>148</td><td class="cgold">VLAN 70</td><td class="cg">144</td><td><span class="sbadge ba">PARTIAL</span></td></tr>
+          <tr><td>Access Control (HID/ZKTeco)</td><td>34</td><td class="cgold">VLAN 70</td><td class="cg">34</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>Environmental Sensors</td><td>12</td><td class="cgold">VLAN 70</td><td class="cg">12</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>Digital Signage Displays</td><td>24</td><td class="cgold">VLAN 20</td><td class="cg">22</td><td><span class="sbadge ba">PARTIAL</span></td></tr>
+          <tr><td>UPS Monitoring (APC)</td><td>18</td><td class="cgold">VLAN 30</td><td class="cg">18</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>Thin Clients (HP/Dell)</td><td>64</td><td class="cgold">VLAN 20</td><td class="cg">61</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>Weather Stations</td><td>2</td><td class="cgold">VLAN 70</td><td class="cg">2</td><td><span class="sbadge bg">OK</span></td></tr>
+          <tr><td>Label Printers (Zebra)</td><td>8</td><td class="cgold">VLAN 80</td><td class="cg">8</td><td><span class="sbadge bg">OK</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CAMPUS ═══ -->
+<div id="tab-campus" class="section">
+  <div class="section-title"><span>CAMPUS NETWORK STATUS</span><span class="badge">LIVE</span></div>
+  <div class="campus-grid" id="campus-grid"></div>
+</div>
+
+<!-- ═══ GP LABS ═══ -->
+<div id="tab-gplabs" class="section">
+  <div class="section-title"><span>GP COMPUTER LABS</span><span class="badge">220 NODES</span></div>
+  <div class="gplab-grid" id="gplab-grid"></div>
+</div>
+
+<!-- ═══ SOC ═══ -->
+<div id="tab-soc" class="section">
+  <div class="section-title"><span>SOC — SECURITY OPERATIONS</span><span class="badge">CLASSIFIED</span></div>
+  <div class="g2">
+    <div class="panel">
+      <div class="panel-title">THREAT INTELLIGENCE</div>
+      <table>
+        <thead><tr><th>INDICATOR</th><th>THIS WEEK</th><th>LAST WEEK</th><th>TREND</th></tr></thead>
+        <tbody>
+          <tr><td>Users Targeted</td><td class="ca">247</td><td class="cdim">291</td><td class="cg">&#x2193;15%</td></tr>
+          <tr><td>Phishing URLs</td><td class="cr2">34</td><td class="cdim">28</td><td class="cr2">&#x2191;21%</td></tr>
+          <tr><td>Malware Events</td><td class="ca">8</td><td class="cdim">12</td><td class="cg">&#x2193;33%</td></tr>
+          <tr><td>Ransomware</td><td class="cg">0</td><td class="cdim">1</td><td class="cg">&#x2193;100%</td></tr>
+          <tr><td>Brute Force</td><td class="ca">156</td><td class="cdim">143</td><td class="cr2">&#x2191;9%</td></tr>
+          <tr><td>DLP Alerts</td><td class="cc">12</td><td class="cdim">9</td><td class="cr2">&#x2191;33%</td></tr>
+          <tr><td>Insider Threats</td><td class="cg">0</td><td class="cdim">0</td><td class="cdim">&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-title">FIREWALL &amp; IPS <div class="live-dot pulse-dot"></div></div>
+      <div class="svc-row"><span class="svc-name">Connections/sec</span><span class="cc" style="font-family:var(--mono)">4,821</span></div>
+      <div class="svc-row"><span class="svc-name">Blocked Today</span><span class="cr2" style="font-family:var(--mono)">1,247</span></div>
+      <div class="svc-row"><span class="svc-name">IPS Signatures</span><span class="sbadge bg">UP TO DATE</span></div>
+      <div class="svc-row"><span class="svc-name">SSL Inspected</span><span class="cgold" style="font-family:var(--mono)">78%</span></div>
+      <div class="svc-row"><span class="svc-name">Web Filter Hits</span><span class="ca" style="font-family:var(--mono)">3,441</span></div>
+      <div class="svc-row"><span class="svc-name">DNS Sinkhole</span><span class="sbadge bg">ACTIVE</span></div>
+      <div class="svc-row"><span class="svc-name">Geo-Block CN/RU/KP</span><span class="sbadge bg">ENABLED</span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">LIVE CYBER THREAT MAP &mdash; FORTIGUARD</div>
+    <div style="height:240px;background:rgba(0,15,40,.8);border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative">
+      <iframe src="https://threatmap.fortiguard.com" style="width:100%;height:100%;border:none;opacity:.9" sandbox="allow-scripts allow-same-origin" title="Threat Map"></iframe>
+      <div style="position:absolute;inset:0;pointer-events:none;border:1px solid var(--border)"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <a href="https://threatmap.fortiguard.com" target="_blank" class="tab-btn" style="text-decoration:none">FORTIGUARD &#x2197;</a>
+      <a href="https://threatmap.checkpoint.com" target="_blank" class="tab-btn" style="text-decoration:none">CHECK POINT &#x2197;</a>
+      <a href="https://threatmap.bitdefender.com" target="_blank" class="tab-btn" style="text-decoration:none">BITDEFENDER &#x2197;</a>
+      <a href="https://cybermap.kaspersky.com" target="_blank" class="tab-btn" style="text-decoration:none">KASPERSKY &#x2197;</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALERTS ═══ -->
+<div id="tab-alerts" class="section">
+  <div class="section-title"><span>ACTIVE ALERTS</span><span class="badge">10 ALERTS</span></div>
+  <div class="panel">
+    <div class="panel-title">ALERT FEED <div class="live-dot pulse-dot"></div></div>
+    <div id="alert-list"></div>
+  </div>
+</div>
+
+<!-- ═══ SYSLOG ═══ -->
+<div id="tab-logs" class="section">
+  <div class="section-title"><span>SYSLOG STREAM</span><span class="badge">LIVE &bull; 60s WINDOW</span></div>
+  <div class="g2">
+    <div class="panel"><div class="panel-title">NETWORK SYSLOG <div class="live-dot pulse-dot"></div></div><div class="log-stream" id="log-net"></div></div>
+    <div class="panel"><div class="panel-title">SECURITY / SIEM LOG <div class="live-dot pulse-dot"></div></div><div class="log-stream" id="log-siem"></div></div>
+  </div>
+</div>
+
+<!-- ═══ TOPOLOGY ═══ -->
+<div id="tab-topology" class="section">
+  <div class="section-title"><span>NETWORK TOPOLOGY</span><span class="badge">FNU DITS</span></div>
+  <div class="panel">
+    <div class="panel-title">LOGICAL NETWORK DIAGRAM</div>
+    <div style="overflow-x:auto">
+      <svg width="1160" height="520" viewBox="0 0 1160 520" style="background:rgba(0,10,30,.6);border-radius:4px;font-family:'Share Tech Mono',monospace">
+        <ellipse cx="580" cy="40" rx="120" ry="26" fill="rgba(0,100,200,.12)" stroke="rgba(0,212,255,.4)" stroke-width="1.5"/>
+        <text x="580" y="35" text-anchor="middle" font-size="10" fill="#00D4FF">INTERNET</text>
+        <text x="580" y="50" text-anchor="middle" font-size="8" fill="#7a8aaa">Vodafone / TFL / Starlink</text>
+        <line x1="580" y1="66" x2="580" y2="96" stroke="#00D4FF" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <rect x="500" y="96" width="160" height="34" rx="3" fill="rgba(255,51,85,.12)" stroke="#FF3355" stroke-width="1.5"/>
+        <text x="580" y="111" text-anchor="middle" font-size="10" fill="#FF3355">FW-CORE-01/02 HA</text>
+        <text x="580" y="123" text-anchor="middle" font-size="8" fill="#7a8aaa">FortiGate 200F &#x2022; 10.0.0.1/2</text>
+        <line x1="580" y1="130" x2="580" y2="158" stroke="#C8A84B" stroke-width="2"/>
+        <rect x="490" y="158" width="180" height="34" rx="3" fill="rgba(200,168,75,.12)" stroke="#C8A84B" stroke-width="1.5"/>
+        <text x="580" y="173" text-anchor="middle" font-size="10" fill="#C8A84B">SW-CORE-SUVA</text>
+        <text x="580" y="185" text-anchor="middle" font-size="8" fill="#7a8aaa">Cisco Cat9500 &#x2022; 10.0.2.1</text>
+        <line x1="540" y1="192" x2="340" y2="232" stroke="#C8A84B" stroke-width="1.5"/>
+        <line x1="580" y1="192" x2="580" y2="232" stroke="#C8A84B" stroke-width="1.5"/>
+        <line x1="620" y1="192" x2="820" y2="232" stroke="#C8A84B" stroke-width="1.5"/>
+        <rect x="250" y="232" width="180" height="30" rx="3" fill="rgba(200,168,75,.08)" stroke="#8B7235" stroke-width="1"/>
+        <text x="340" y="247" text-anchor="middle" font-size="9" fill="#C8A84B">SW-DIST-SUVA-A</text>
+        <text x="340" y="258" text-anchor="middle" font-size="8" fill="#7a8aaa">Cat9300 &#x2022; 10.0.2.10</text>
+        <rect x="490" y="232" width="180" height="30" rx="3" fill="rgba(187,134,252,.08)" stroke="rgba(187,134,252,.4)" stroke-width="1"/>
+        <text x="580" y="247" text-anchor="middle" font-size="9" fill="#BB86FC">VM-SERVERS (VLAN50)</text>
+        <text x="580" y="258" text-anchor="middle" font-size="8" fill="#7a8aaa">Nutanix AHV &#x2022; 10.50.0.0/24</text>
+        <rect x="730" y="232" width="180" height="30" rx="3" fill="rgba(200,168,75,.08)" stroke="#8B7235" stroke-width="1"/>
+        <text x="820" y="247" text-anchor="middle" font-size="9" fill="#C8A84B">SW-DIST-SUVA-B</text>
+        <text x="820" y="258" text-anchor="middle" font-size="8" fill="#7a8aaa">Cat9300 &#x2022; 10.0.2.11</text>
+        <line x1="310" y1="262" x2="160" y2="296" stroke="#8B7235" stroke-width="1"/>
+        <line x1="370" y1="262" x2="340" y2="296" stroke="#8B7235" stroke-width="1"/>
+        <rect x="70" y="296" width="160" height="26" rx="2" fill="rgba(0,212,255,.06)" stroke="rgba(0,212,255,.3)" stroke-width="1"/>
+        <text x="150" y="311" text-anchor="middle" font-size="9" fill="#00D4FF">SW-ACC-SUVA-01</text>
+        <text x="150" y="319" text-anchor="middle" font-size="7" fill="#7a8aaa">B Block &#x2022; VLAN 10/20</text>
+        <rect x="250" y="296" width="160" height="26" rx="2" fill="rgba(0,212,255,.06)" stroke="rgba(0,212,255,.3)" stroke-width="1"/>
+        <text x="330" y="311" text-anchor="middle" font-size="9" fill="#00D4FF">SW-ACC-SUVA-04</text>
+        <text x="330" y="319" text-anchor="middle" font-size="7" fill="#7a8aaa">GP Lab A &#x2022; VLAN 20</text>
+        <line x1="780" y1="262" x2="660" y2="296" stroke="#8B7235" stroke-width="1"/>
+        <line x1="860" y1="262" x2="980" y2="296" stroke="#8B7235" stroke-width="1"/>
+        <rect x="580" y="296" width="160" height="26" rx="2" fill="rgba(0,212,255,.06)" stroke="rgba(0,212,255,.3)" stroke-width="1"/>
+        <text x="660" y="311" text-anchor="middle" font-size="9" fill="#00D4FF">SW-ACC-SUVA-03</text>
+        <text x="660" y="319" text-anchor="middle" font-size="7" fill="#7a8aaa">Admin &#x2022; VLAN 40</text>
+        <rect x="900" y="296" width="160" height="26" rx="2" fill="rgba(0,212,255,.06)" stroke="rgba(0,212,255,.3)" stroke-width="1"/>
+        <text x="980" y="311" text-anchor="middle" font-size="9" fill="#00D4FF">SW-ACC-SUVA-06</text>
+        <text x="980" y="319" text-anchor="middle" font-size="7" fill="#7a8aaa">Library &#x2022; VLAN 10/20</text>
+        <line x1="505" y1="112" x2="100" y2="158" stroke="#FFB800" stroke-width="1" stroke-dasharray="6,3"/>
+        <line x1="655" y1="112" x2="1060" y2="158" stroke="#FFB800" stroke-width="1" stroke-dasharray="6,3"/>
+        <rect x="20" y="158" width="160" height="30" rx="3" fill="rgba(255,184,0,.08)" stroke="#7a5800" stroke-width="1"/>
+        <text x="100" y="173" text-anchor="middle" font-size="9" fill="#FFB800">LAUTOKA CAMPUS</text>
+        <text x="100" y="183" text-anchor="middle" font-size="8" fill="#7a8aaa">RTR-LKA-01 &#x2022; 10.1.1.1</text>
+        <rect x="980" y="158" width="160" height="30" rx="3" fill="rgba(0,255,136,.07)" stroke="rgba(0,255,136,.2)" stroke-width="1"/>
+        <text x="1060" y="173" text-anchor="middle" font-size="9" fill="#00FF88">LABASA/BA/NADI</text>
+        <text x="1060" y="183" text-anchor="middle" font-size="8" fill="#7a8aaa">MPLS Inter-campus</text>
+        <rect x="50" y="362" width="80" height="22" rx="2" fill="rgba(204,214,246,.06)" stroke="rgba(204,214,246,.2)" stroke-width="0.8"/>
+        <text x="90" y="376" text-anchor="middle" font-size="8" fill="#ccd6f6">PCs (40)</text>
+        <rect x="130" y="362" width="80" height="22" rx="2" fill="rgba(255,184,0,.06)" stroke="rgba(255,184,0,.2)" stroke-width="0.8"/>
+        <text x="170" y="376" text-anchor="middle" font-size="8" fill="#FFB800">VoIP (48)</text>
+        <rect x="210" y="362" width="80" height="22" rx="2" fill="rgba(0,255,136,.06)" stroke="rgba(0,255,136,.2)" stroke-width="0.8"/>
+        <text x="250" y="376" text-anchor="middle" font-size="8" fill="#00FF88">APs (12)</text>
+        <rect x="290" y="362" width="80" height="22" rx="2" fill="rgba(0,212,255,.06)" stroke="rgba(0,212,255,.2)" stroke-width="0.8"/>
+        <text x="330" y="376" text-anchor="middle" font-size="8" fill="#00D4FF">GP PCs (40)</text>
+        <rect x="370" y="362" width="80" height="22" rx="2" fill="rgba(255,51,85,.06)" stroke="rgba(255,51,85,.2)" stroke-width="0.8"/>
+        <text x="410" y="376" text-anchor="middle" font-size="8" fill="#FF3355">CCTV (16)</text>
+        <rect x="450" y="362" width="80" height="22" rx="2" fill="rgba(187,134,252,.06)" stroke="rgba(187,134,252,.2)" stroke-width="0.8"/>
+        <text x="490" y="376" text-anchor="middle" font-size="8" fill="#BB86FC">Print (14)</text>
+        <rect x="20" y="430" width="1120" height="50" rx="3" fill="rgba(0,15,40,.6)" stroke="rgba(200,168,75,.15)" stroke-width="1"/>
+        <text x="40" y="453" font-size="9" fill="#C8A84B">LEGEND:</text>
+        <line x1="100" y1="450" x2="130" y2="450" stroke="#C8A84B" stroke-width="2"/>
+        <text x="135" y="453" font-size="8" fill="#7a8aaa">Core backbone</text>
+        <line x1="230" y1="450" x2="260" y2="450" stroke="#FFB800" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="265" y="453" font-size="8" fill="#7a8aaa">WAN/MPLS</text>
+        <line x1="340" y1="450" x2="370" y2="450" stroke="#00D4FF" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="375" y="453" font-size="8" fill="#7a8aaa">Internet uplink</text>
+        <text x="40" y="472" font-size="8" fill="#7a8aaa">VLANs: 10=Staff | 20=Student | 30=Mgmt | 40=Admin | 50=Servers | 60=VoIP | 70=CCTV/IoT | 80=Printers | 90=WiFi-Student | 91=WiFi-Staff | 99=Guest</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <span style="color:var(--gold)">FNU NOC / SOC CYBER OPS DASHBOARD</span> &bull;
+  DIVISION OF IT SERVICES (DITS) &bull; FIJI NATIONAL UNIVERSITY &bull;
+  <span style="color:var(--gold)">v3.0.0 &mdash; AI POWERED</span> &bull;
+  Claude Sonnet 4 &bull;
+  <a href="https://www.fnu.ac.fj" target="_blank">www.fnu.ac.fj</a>
+</footer>
+
+</div><!-- #app -->
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const CAMPUSES = [
+  {id:"SUVA",name:"Suva (Nasinu)",loc:"Central Division",devices:624,users:1842,wan:"100 Mbps VF",aps:"48/48",status:"ONLINE",lat:18,loss:"0.07%",inc:1},
+  {id:"LKA",name:"Lautoka",loc:"Western Division",devices:284,users:623,wan:"50 Mbps ↑87%",aps:"22/24",status:"DEGRADED",lat:28,loss:"0.21%",inc:2},
+  {id:"LBS",name:"Labasa",loc:"Northern Division",devices:142,users:318,wan:"20 Mbps TFL",aps:"14/14",status:"ONLINE",lat:31,loss:"0.09%",inc:0},
+  {id:"BA",name:"Ba",loc:"Western Division",devices:96,users:204,wan:"20 Mbps VF",aps:"10/10",status:"ONLINE",lat:29,loss:"0.08%",inc:0},
+  {id:"NADI",name:"Nadi / Namaka",loc:"Western Division",devices:98,users:287,wan:"20 Mbps TFL",aps:"12/12",status:"PARTIAL",lat:27,loss:"0.12%",inc:1},
+  {id:"KRN",name:"Koronivia",loc:"Central Division",devices:68,users:156,wan:"10 Mbps VF",aps:"8/8",status:"ONLINE",lat:24,loss:"0.06%",inc:0},
+];
+
+const NET_DEVICES = [
+  {name:"FW-CORE-01",ip:"10.0.0.1",role:"FortiGate 200F — Primary NGFW",campus:"SUVA",cpu:12,status:"ACTIVE"},
+  {name:"FW-CORE-02",ip:"10.0.0.2",role:"FortiGate 200F — HA Standby",campus:"SUVA",cpu:8,status:"STANDBY"},
+  {name:"RTR-CORE-01",ip:"10.0.1.1",role:"Cisco ISR 4451 — WAN Gateway",campus:"SUVA",cpu:24,status:"ONLINE"},
+  {name:"SW-CORE-SUVA",ip:"10.0.2.1",role:"Cisco Catalyst 9500 L3",campus:"SUVA",cpu:14,status:"ONLINE"},
+  {name:"SW-DIST-SUVA-A",ip:"10.0.2.10",role:"Cisco Catalyst 9300 L3",campus:"SUVA",cpu:9,status:"ONLINE"},
+  {name:"SW-DIST-SUVA-B",ip:"10.0.2.11",role:"Cisco Catalyst 9300 L3",campus:"SUVA",cpu:11,status:"ONLINE"},
+  {name:"SW-ACC-SUVA-01",ip:"10.0.3.1",role:"Cisco Catalyst 2960 — B Block",campus:"SUVA",cpu:7,status:"ONLINE"},
+  {name:"SW-ACC-SUVA-04",ip:"10.0.3.4",role:"Cisco Catalyst 2960 — GP Lab A",campus:"SUVA",cpu:9,status:"ONLINE"},
+  {name:"SW-ACC-SUVA-05",ip:"10.0.3.5",role:"Cisco Catalyst 2960 — GP Lab B",campus:"SUVA",cpu:6,status:"WARN"},
+  {name:"SW-ACC-SUVA-06",ip:"10.0.3.6",role:"Cisco Catalyst 2960 — Library",campus:"SUVA",cpu:5,status:"ONLINE"},
+  {name:"RTR-LKA-01",ip:"10.1.1.1",role:"Cisco ISR 4331 — WAN GW",campus:"LAUTOKA",cpu:61,status:"WARN"},
+  {name:"SW-CORE-LKA",ip:"10.1.2.1",role:"Cisco Catalyst 9300",campus:"LAUTOKA",cpu:22,status:"ONLINE"},
+  {name:"SW-ACC-LKA-01",ip:"10.1.3.1",role:"Cisco Catalyst 2960 — A Block",campus:"LAUTOKA",cpu:14,status:"ONLINE"},
+  {name:"SW-ACC-LKA-02",ip:"10.1.3.2",role:"Cisco Catalyst 2960 — GP Lab",campus:"LAUTOKA",cpu:18,status:"ONLINE"},
+  {name:"RTR-LBS-01",ip:"10.2.1.1",role:"Cisco ISR 4321",campus:"LABASA",cpu:18,status:"ONLINE"},
+  {name:"RTR-BA-01",ip:"10.3.1.1",role:"Cisco ISR 4321",campus:"BA",cpu:15,status:"ONLINE"},
+  {name:"RTR-NDI-01",ip:"10.4.1.1",role:"Cisco ISR 4321",campus:"NADI",cpu:19,status:"ONLINE"},
+  {name:"SW-ACC-NDI-01",ip:"10.4.3.1",role:"Cisco Catalyst 2960 — Main",campus:"NADI",cpu:8,status:"WARN"},
+  {name:"SW-ACC-NDI-02",ip:"10.4.3.2",role:"Cisco Catalyst 2960 — GP Lab",campus:"NADI",cpu:5,status:"FAULT"},
+  {name:"RTR-KRN-01",ip:"10.5.1.1",role:"Cisco ISR 4321",campus:"KORONIVIA",cpu:11,status:"ONLINE"},
+];
+
+const VLANS = [
+  {id:10,name:"STAFF_DATA",subnet:"10.10.0.0/22",gw:"10.10.0.1",devices:412,purpose:"Staff workstations & laptops",zone:"TRUST"},
+  {id:20,name:"STUDENT_DATA",subnet:"10.20.0.0/21",gw:"10.20.0.1",devices:842,purpose:"GP Lab PCs & student devices",zone:"SEMI-TRUST"},
+  {id:30,name:"MGMT",subnet:"10.0.0.0/24",gw:"10.0.0.1",devices:48,purpose:"Network device management",zone:"RESTRICTED"},
+  {id:40,name:"ADMIN",subnet:"10.40.0.0/23",gw:"10.40.0.1",devices:128,purpose:"Finance, HR, Executive",zone:"RESTRICTED"},
+  {id:50,name:"SERVERS",subnet:"10.50.0.0/24",gw:"10.50.0.1",devices:68,purpose:"Physical & VM servers",zone:"DMZ"},
+  {id:60,name:"VOIP",subnet:"10.60.0.0/23",gw:"10.60.0.1",devices:384,purpose:"VoIP handsets & softphones",zone:"SEMI-TRUST"},
+  {id:70,name:"CCTV_IOT",subnet:"10.70.0.0/23",gw:"10.70.0.1",devices:148,purpose:"IP cameras, access control, IoT",zone:"ISOLATED"},
+  {id:80,name:"PRINTERS",subnet:"10.80.0.0/23",gw:"10.80.0.1",devices:87,purpose:"Network printers & MFDs",zone:"SEMI-TRUST"},
+  {id:90,name:"WIFI_STUDENT",subnet:"172.16.0.0/20",gw:"172.16.0.1",devices:2400,purpose:"EduRoam & student Wi-Fi SSID",zone:"SEMI-TRUST"},
+  {id:91,name:"WIFI_STAFF",subnet:"172.17.0.0/22",gw:"172.17.0.1",devices:300,purpose:"Staff 802.1X Wi-Fi",zone:"TRUST"},
+  {id:99,name:"GUEST",subnet:"192.168.99.0/22",gw:"192.168.99.1",devices:0,purpose:"Guest Wi-Fi — Internet only",zone:"UNTRUST"},
+];
+
+const SERVERS = [
+  {name:"NUTX-NODE-01",ip:"10.50.0.11",role:"Nutanix AHV Node 1",cpu:34,ram:72,disk:58,status:"HEALTHY"},
+  {name:"NUTX-NODE-02",ip:"10.50.0.12",role:"Nutanix AHV Node 2",cpu:29,ram:68,disk:54,status:"HEALTHY"},
+  {name:"NUTX-NODE-03",ip:"10.50.0.13",role:"Nutanix AHV Node 3",cpu:41,ram:79,disk:61,status:"HEALTHY"},
+  {name:"FNU-NAS-01",ip:"10.50.0.21",role:"Primary NAS — 24TB",cpu:8,ram:22,disk:71,status:"ONLINE"},
+  {name:"FNU-NAS-02",ip:"10.50.0.22",role:"Secondary NAS / DR 24TB",cpu:6,ram:18,disk:69,status:"ONLINE"},
+  {name:"FNU-BACKUP-01",ip:"10.50.0.30",role:"Veeam Backup Server",cpu:12,ram:31,disk:55,status:"ONLINE"},
+  {name:"VM-SIMS-APP",ip:"10.50.1.10",role:"SIMS Application Server",cpu:44,ram:61,disk:48,status:"RUNNING"},
+  {name:"VM-SIMS-DB",ip:"10.50.1.11",role:"SIMS MSSQL Database",cpu:38,ram:74,disk:52,status:"RUNNING"},
+  {name:"VM-MOODLE-WEB",ip:"10.50.1.20",role:"Moodle LMS Web Frontend",cpu:56,ram:68,disk:78,status:"RUNNING"},
+  {name:"VM-MOODLE-DB",ip:"10.50.1.21",role:"Moodle MySQL Database",cpu:42,ram:72,disk:54,status:"RUNNING"},
+  {name:"VM-AD-01",ip:"10.50.1.30",role:"Active Directory DC1",cpu:12,ram:34,disk:28,status:"RUNNING"},
+  {name:"VM-AD-02",ip:"10.50.1.31",role:"Active Directory DC2",cpu:10,ram:31,disk:26,status:"RUNNING"},
+  {name:"VM-DNS-01",ip:"10.50.1.40",role:"Internal DNS (BIND)",cpu:6,ram:18,disk:14,status:"RUNNING"},
+  {name:"VM-DHCP-01",ip:"10.50.1.41",role:"DHCP Server",cpu:4,ram:12,disk:10,status:"RUNNING"},
+  {name:"VM-WAZUH",ip:"10.50.1.50",role:"Wazuh SIEM Manager",cpu:64,ram:71,disk:62,status:"RUNNING"},
+  {name:"VM-FORTI-MGR",ip:"10.50.1.51",role:"FortiManager",cpu:18,ram:42,disk:35,status:"RUNNING"},
+  {name:"VM-FORTI-ANA",ip:"10.50.1.52",role:"FortiAnalyzer",cpu:22,ram:46,disk:40,status:"RUNNING"},
+  {name:"VM-RADIUS-01",ip:"10.50.1.60",role:"FreeRADIUS (EduRoam)",cpu:8,ram:24,disk:12,status:"RUNNING"},
+  {name:"VM-PRINT-SRV",ip:"10.50.1.70",role:"PaperCut Print Server",cpu:14,ram:28,disk:22,status:"RUNNING"},
+  {name:"VM-VOIP-GW",ip:"10.50.1.80",role:"FreePBX VoIP Gateway",cpu:22,ram:38,disk:24,status:"RUNNING"},
+  {name:"VM-CCTV-NVR01",ip:"10.50.1.90",role:"Dahua NVR — Suva",cpu:18,ram:44,disk:68,status:"RUNNING"},
+  {name:"VM-PROXY-01",ip:"10.50.1.100",role:"Squid Web Proxy",cpu:31,ram:52,disk:34,status:"RUNNING"},
+  {name:"VM-PKI-01",ip:"10.50.1.110",role:"Certificate Authority",cpu:4,ram:14,disk:18,status:"RUNNING"},
+  {name:"VM-JIRA-SD",ip:"10.50.1.120",role:"Jira Service Management",cpu:34,ram:58,disk:44,status:"RUNNING"},
+];
+
+const APs = [
+  {name:"AP-SUVA-01",ip:"10.0.100.1",model:"Cisco Cat 9120",campus:"SUVA",loc:"B Block Lvl1",clients:24,ch:6,sig:"-72dBm",status:"ONLINE"},
+  {name:"AP-SUVA-02",ip:"10.0.100.2",model:"Cisco Cat 9120",campus:"SUVA",loc:"B Block Lvl2",clients:18,ch:11,sig:"-68dBm",status:"ONLINE"},
+  {name:"AP-SUVA-03",ip:"10.0.100.3",model:"Cisco Cat 9120",campus:"SUVA",loc:"C Block Lvl1",clients:31,ch:6,sig:"-70dBm",status:"ONLINE"},
+  {name:"AP-SUVA-04",ip:"10.0.100.4",model:"Cisco Cat 9120",campus:"SUVA",loc:"GP Lab A",clients:42,ch:1,sig:"-65dBm",status:"ONLINE"},
+  {name:"AP-SUVA-05",ip:"10.0.100.5",model:"Cisco Cat 9120",campus:"SUVA",loc:"GP Lab B",clients:38,ch:6,sig:"-67dBm",status:"WARN"},
+  {name:"AP-SUVA-06",ip:"10.0.100.6",model:"Cisco Cat 9120",campus:"SUVA",loc:"Library",clients:27,ch:11,sig:"-71dBm",status:"ONLINE"},
+  {name:"AP-SUVA-07",ip:"10.0.100.7",model:"Cisco Cat 9120",campus:"SUVA",loc:"Admin Block",clients:12,ch:6,sig:"-69dBm",status:"ONLINE"},
+  {name:"AP-SUVA-08",ip:"10.0.100.8",model:"Cisco Cat 9120",campus:"SUVA",loc:"Cafeteria",clients:56,ch:1,sig:"-74dBm",status:"ONLINE"},
+  {name:"AP-LKA-01",ip:"10.1.100.1",model:"Cisco Cat 9105",campus:"LAUTOKA",loc:"A Block Lvl1",clients:28,ch:6,sig:"-70dBm",status:"ONLINE"},
+  {name:"AP-LKA-02",ip:"10.1.100.2",model:"Cisco Cat 9105",campus:"LAUTOKA",loc:"GP Lab",clients:35,ch:11,sig:"-66dBm",status:"ONLINE"},
+  {name:"AP-LKA-03",ip:"10.1.100.3",model:"Cisco Cat 9105",campus:"LAUTOKA",loc:"Admin",clients:9,ch:6,sig:"-72dBm",status:"OFFLINE"},
+  {name:"AP-LBS-01",ip:"10.2.100.1",model:"Ubiquiti U6",campus:"LABASA",loc:"Main Block",clients:19,ch:6,sig:"-71dBm",status:"ONLINE"},
+  {name:"AP-BA-01",ip:"10.3.100.1",model:"Ubiquiti U6",campus:"BA",loc:"Main Block",clients:14,ch:6,sig:"-73dBm",status:"ONLINE"},
+  {name:"AP-NDI-01",ip:"10.4.100.1",model:"Ubiquiti U6",campus:"NADI",loc:"Main Block",clients:21,ch:1,sig:"-70dBm",status:"ONLINE"},
+  {name:"AP-KRN-01",ip:"10.5.100.1",model:"Ubiquiti U6",campus:"KORONIVIA",loc:"Main Block",clients:11,ch:6,sig:"-75dBm",status:"ONLINE"},
+];
+
+const PRINTERS = [
+  {name:"PRINT-SUVA-01",ip:"10.80.0.11",model:"Canon iR C3226i",campus:"SUVA",loc:"IT Office",pages:342,toner:88,status:"ONLINE"},
+  {name:"PRINT-SUVA-02",ip:"10.80.0.12",model:"HP LaserJet M507dn",campus:"SUVA",loc:"Admin Block",pages:218,toner:64,status:"ONLINE"},
+  {name:"PRINT-SUVA-03",ip:"10.80.0.13",model:"Ricoh IM C3000",campus:"SUVA",loc:"Library",pages:524,toner:71,status:"ONLINE"},
+  {name:"PRINT-SUVA-04",ip:"10.80.0.14",model:"Xerox VersaLink C405",campus:"SUVA",loc:"Finance",pages:156,toner:40,status:"ONLINE"},
+  {name:"PRINT-SUVA-05",ip:"10.80.0.15",model:"HP LaserJet M507dn",campus:"SUVA",loc:"HR Office",pages:94,toner:30,status:"WARN"},
+  {name:"PRINT-SUVA-06",ip:"10.80.0.16",model:"Canon iR C3226i",campus:"SUVA",loc:"GP Lab A",pages:88,toner:55,status:"ONLINE"},
+  {name:"PRINT-LKA-01",ip:"10.80.1.11",model:"Canon iR C3226i",campus:"LAUTOKA",loc:"Admin",pages:187,toner:62,status:"ONLINE"},
+  {name:"PRINT-LKA-02",ip:"10.80.1.12",model:"HP LaserJet M507dn",campus:"LAUTOKA",loc:"B Block",pages:0,toner:5,status:"OFFLINE"},
+  {name:"PRINT-LKA-03",ip:"10.80.1.13",model:"Ricoh IM 2702",campus:"LAUTOKA",loc:"GP Lab",pages:112,toner:48,status:"ONLINE"},
+  {name:"PRINT-LBS-01",ip:"10.80.2.11",model:"Canon iR 2206i",campus:"LABASA",loc:"Admin",pages:96,toner:70,status:"ONLINE"},
+  {name:"PRINT-LBS-02",ip:"10.80.2.12",model:"HP LaserJet M404n",campus:"LABASA",loc:"GP Lab",pages:78,toner:55,status:"ONLINE"},
+  {name:"PRINT-BA-01",ip:"10.80.3.11",model:"Canon iR 2206i",campus:"BA",loc:"Admin",pages:54,toner:82,status:"ONLINE"},
+  {name:"PRINT-NDI-01",ip:"10.80.4.11",model:"HP LaserJet M507dn",campus:"NADI",loc:"Admin",pages:41,toner:65,status:"ONLINE"},
+  {name:"PRINT-NDI-02",ip:"10.80.4.12",model:"Canon iR 2206i",campus:"NADI",loc:"GP Lab",pages:33,toner:78,status:"ONLINE"},
+  {name:"PRINT-KRN-01",ip:"10.80.5.11",model:"HP LaserJet M404n",campus:"KORONIVIA",loc:"Admin",pages:29,toner:90,status:"ONLINE"},
+];
+
+const ALERTS = [
+  {sev:"CRIT",time:"08:42",msg:"Phishing — 3 Staff Accounts Targeted",sub:"MFA bypass attempt • Accounts locked"},
+  {sev:"CRIT",time:"08:35",msg:"MS365 Exchange Online — Degraded",sub:"MS incident MO-789432 • ETA 2h"},
+  {sev:"WARN",time:"08:28",msg:"Lautoka WAN — 87% Utilisation",sub:"Throttling in effect"},
+  {sev:"WARN",time:"08:18",msg:"Moodle Storage — 78% Capacity",sub:"Approaching 80% threshold"},
+  {sev:"CRIT",time:"07:55",msg:"GP Lab Nadi — 7 Nodes Offline",sub:"Switch port block C — hw fault"},
+  {sev:"INFO",time:"07:30",msg:"Backup FNU-NAS-02 Completed",sub:"2.1TB synced — DR verified"},
+  {sev:"OK",  time:"07:12",msg:"SW-NASINU Core Switch Restored",sub:"Rebooted — services resumed"},
+  {sev:"WARN",time:"06:44",msg:"EduRoam — Elevated Auth Failures",sub:"Suva: 124 failures — 3× baseline"},
+  {sev:"WARN",time:"06:20",msg:"PRINT-LKA-02 — Toner Low",sub:"Lautoka B Block — order required"},
+  {sev:"WARN",time:"05:50",msg:"2 CCTV Cameras Offline — SUVA",sub:"SUVA-CAM-041/042 — NVR check"},
+];
+
+const GP_LABS = [
+  {name:"GP LAB A — SUVA",on:38,tot:40,status:"OPEN"},
+  {name:"GP LAB B — SUVA",on:34,tot:40,status:"PARTIAL"},
+  {name:"GP LAB C — SUVA",on:40,tot:40,status:"OPEN"},
+  {name:"GP LAB — LAUTOKA",on:35,tot:35,status:"OPEN"},
+  {name:"GP LAB — LABASA",on:28,tot:30,status:"OPEN"},
+  {name:"GP LAB — BA",on:20,tot:20,status:"OPEN"},
+  {name:"GP LAB — NADI",on:18,tot:25,status:"ISSUE"},
+  {name:"TOTAL NODES",on:213,tot:220,status:"96.8%"},
+];
+
+// ─── ENDPOINT GENERATION ─────────────────────────────────────────────────────
+const epConfig = [
+  {campus:"SUVA",dept:"IT Office",type:"Workstation",os:"Windows 11 Pro",user:"itstaff",count:80},
+  {campus:"SUVA",dept:"GP Lab A",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:40},
+  {campus:"SUVA",dept:"Admin Block",type:"Workstation",os:"Windows 11 Pro",user:"admin01",count:30},
+  {campus:"SUVA",dept:"Finance",type:"Laptop",os:"Windows 11 Pro",user:"finance.clerk",count:20},
+  {campus:"LAUTOKA",dept:"IT Office",type:"Workstation",os:"Windows 11 Pro",user:"itstaff.lka",count:30},
+  {campus:"LAUTOKA",dept:"GP Lab",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:35},
+  {campus:"LABASA",dept:"Admin",type:"Workstation",os:"Windows 11 Pro",user:"admin.lbs",count:20},
+  {campus:"LABASA",dept:"GP Lab",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:28},
+  {campus:"BA",dept:"GP Lab",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:20},
+  {campus:"NADI",dept:"IT Office",type:"Laptop",os:"macOS 14",user:"staff.ndi",count:15},
+  {campus:"NADI",dept:"GP Lab",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:18},
+  {campus:"KORONIVIA",dept:"Admin",type:"Workstation",os:"Windows 11 Pro",user:"admin.krn",count:12},
+];
+const ALL_ENDPOINTS = [];
+let epId = 1;
+epConfig.forEach(cfg => {
+  const pfx = cfg.campus==="SUVA"?"10.10":cfg.campus==="LAUTOKA"?"10.11":cfg.campus==="LABASA"?"10.12":cfg.campus==="BA"?"10.13":cfg.campus==="NADI"?"10.14":"10.15";
+  for(let i=0;i<cfg.count;i++){
+    const st = i===3?"OFFLINE":i===7?"IDLE":i===11?"WARN":"ONLINE";
+    ALL_ENDPOINTS.push({
+      id:epId++,
+      hostname:(cfg.type==="GP Lab"?"GPPC":"WS")+"-"+cfg.campus.substr(0,3)+"-"+String(epId).padStart(3,"0"),
+      ip:`${pfx}.${Math.floor(i/200)+1}.${(i%200)+10}`,
+      mac:Array.from({length:6},()=>Math.floor(Math.random()*256).toString(16).padStart(2,"0")).join(":").toUpperCase(),
+      type:cfg.type,campus:cfg.campus,dept:cfg.dept,os:cfg.os,user:cfg.user,
+      status:st,av:st==="OFFLINE"?"—":st==="WARN"?"OUTDATED":"OK"
+    });
+  }
+});
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fjtNow = () => new Date(Date.now()+12*3600000).toISOString().substr(11,8);
+
+function statusBadge(s){
+  const u=(s||"").toUpperCase();
+  if(["ONLINE","ACTIVE","RUNNING","HEALTHY","OK","NOMINAL","STANDBY","OPEN"].some(x=>u.includes(x))) return `<span class="sbadge bg">${s}</span>`;
+  if(["WARN","DEGRADED","PARTIAL","IDLE","OUTDATED"].some(x=>u.includes(x))) return `<span class="sbadge ba">${s}</span>`;
+  if(["OFFLINE","FAULT","CRIT","DOWN","ERROR","ISSUE"].some(x=>u.includes(x))) return `<span class="sbadge br">${s}</span>`;
+  if(["INFO"].some(x=>u.includes(x))) return `<span class="sbadge bc">${s}</span>`;
+  return `<span class="sbadge bgold">${s}</span>`;
+}
+
+function cpuColor(v){return v>70?"cr2":v>45?"ca":"cg";}
+function diskColor(v){return v>80?"cr2":v>65?"ca":"cg";}
+function tonerColor(v){return v<20?"cr2":v<40?"ca":"cg";}
+function zoneClass(z){if(z==="TRUST")return "bg";if(z==="RESTRICTED"||z==="ISOLATED"||z==="UNTRUST")return "br";return "ba";}
+
+// ─── TAB CONTROL ─────────────────────────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+id).classList.add("active");
+  event.currentTarget.classList.add("active");
+}
+
+// ─── CLOCKS ──────────────────────────────────────────────────────────────────
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById("clk-fjt").textContent=new Date(n.getTime()+12*3600000).toISOString().substr(11,8);
+  document.getElementById("clk-utc").textContent=n.toISOString().substr(11,8);
+},1000);
+
+// ─── RENDER TABLES ───────────────────────────────────────────────────────────
+function renderNetDev(){
+  document.getElementById("netdev-tbody").innerHTML=NET_DEVICES.map(d=>`<tr>
+    <td style="color:#ccd6f6;font-weight:600">&#x1F500; ${d.name}</td>
+    <td style="color:var(--cyan)">${d.ip}</td>
+    <td style="color:var(--dim)">${d.role}</td>
+    <td>${d.campus}</td>
+    <td class="${cpuColor(d.cpu)}">${d.cpu}%</td>
+    <td>${statusBadge(d.status)}</td>
+  </tr>`).join("");
+}
+
+function renderVlans(){
+  document.getElementById("vlan-tbody").innerHTML=VLANS.map(v=>`<tr>
+    <td class="cgold">VLAN ${v.id}</td>
+    <td>${v.name}</td>
+    <td style="color:var(--cyan)">${v.subnet}</td>
+    <td style="color:var(--cyan)">${v.gw}</td>
+    <td style="color:var(--cyan)">${v.devices.toLocaleString()}</td>
+    <td style="color:var(--dim)">${v.purpose}</td>
+    <td><span class="sbadge ${zoneClass(v.zone)}">${v.zone}</span></td>
+  </tr>`).join("");
+}
+
+function renderServers(){
+  document.getElementById("srv-tbody").innerHTML=SERVERS.map(s=>`<tr>
+    <td style="font-weight:600">${s.name}</td>
+    <td style="color:var(--cyan)">${s.ip}</td>
+    <td style="color:var(--dim)">${s.role}</td>
+    <td class="${cpuColor(s.cpu)}">${s.cpu}%</td>
+    <td class="${diskColor(s.ram)}">${s.ram}%</td>
+    <td class="${diskColor(s.disk)}">${s.disk}%</td>
+    <td>${statusBadge(s.status)}</td>
+  </tr>`).join("");
+}
+
+function renderAPs(){
+  document.getElementById("ap-tbody").innerHTML=APs.map(a=>`<tr>
+    <td style="font-weight:600">&#x1F4E1; ${a.name}</td>
+    <td style="color:var(--cyan)">${a.ip}</td>
+    <td style="color:var(--dim)">${a.model}</td>
+    <td>${a.campus}</td>
+    <td style="color:var(--dim)">${a.loc}</td>
+    <td style="color:var(--gold)">${a.clients}</td>
+    <td style="color:var(--dim)">${a.ch}</td>
+    <td style="color:var(--green)">${a.sig}</td>
+    <td>${statusBadge(a.status)}</td>
+  </tr>`).join("");
+}
+
+function renderPrinters(){
+  document.getElementById("printer-tbody").innerHTML=PRINTERS.map(p=>`<tr>
+    <td style="font-weight:600">&#x1F5A8; ${p.name}</td>
+    <td style="color:var(--cyan)">${p.ip}</td>
+    <td style="color:var(--dim)">${p.model}</td>
+    <td>${p.campus}</td>
+    <td style="color:var(--dim)">${p.loc}</td>
+    <td style="color:var(--cyan)">${p.pages}</td>
+    <td class="${tonerColor(p.toner)}">${p.toner}%</td>
+    <td>${statusBadge(p.status)}</td>
+  </tr>`).join("");
+}
+
+function renderAlerts(){
+  document.getElementById("alert-list").innerHTML=ALERTS.map(a=>{
+    const cls=a.sev==="CRIT"?"crit":a.sev==="WARN"?"warn":a.sev==="INFO"?"info":"ok";
+    const sc=a.sev==="CRIT"?"var(--red)":a.sev==="WARN"?"var(--amber)":a.sev==="INFO"?"var(--cyan)":"var(--green)";
+    return `<div class="alert-item ${cls}">
+      <div><div class="alert-time">${a.time}</div><div style="font-family:var(--mono);font-size:8px;color:${sc}">${a.sev}</div></div>
+      <div><div class="alert-msg">${a.msg}</div><div class="alert-sub">${a.sub}</div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderCampus(){
+  document.getElementById("campus-grid").innerHTML=CAMPUSES.map(c=>{
+    const sc=c.status==="ONLINE"?"bg":c.status==="DEGRADED"||c.status==="PARTIAL"?"ba":"br";
+    const lc=c.lat>25?"ca":"cg";
+    const ic=c.inc>0?"ca":"cg";
+    return `<div class="campus-card">
+      <div class="cn">${c.name}</div><div class="cl">${c.loc}</div>
+      <div class="cr"><span class="crl">Status</span><span class="sbadge ${sc}">${c.status}</span></div>
+      <div class="cr"><span class="crl">Devices</span><span class="crv cc">${c.devices}</span></div>
+      <div class="cr"><span class="crl">Users Active</span><span class="crv cg">${c.users.toLocaleString()}</span></div>
+      <div class="cr"><span class="crl">WAN Uplink</span><span class="crv ${c.wan.includes("87%")?"ca":"cg"}">${c.wan}</span></div>
+      <div class="cr"><span class="crl">Wi-Fi APs</span><span class="crv">${c.aps}</span></div>
+      <div class="cr"><span class="crl">Latency</span><span class="crv ${lc}">${c.lat}ms</span></div>
+      <div class="cr"><span class="crl">Pkt Loss</span><span class="crv cg">${c.loss}</span></div>
+      <div class="cr"><span class="crl">Incidents</span><span class="crv ${ic}">${c.inc}</span></div>
+    </div>`;
+  }).join("");
+}
+
+function renderGPLabs(){
+  document.getElementById("gplab-grid").innerHTML=GP_LABS.map(g=>{
+    const r=g.on/g.tot;
+    const vc=r>=0.95?"cg":r>=0.8?"ca":"cr2";
+    const sc=g.status==="OPEN"?"bg":g.status==="ISSUE"?"br":"ba";
+    return `<div class="gplab-card">
+      <div class="gpn">${g.name}</div>
+      <span class="gpc ${vc}">${g.on}/${g.tot}</span>
+      <div class="gps">NODES ONLINE</div>
+      <div style="margin-top:6px"><span class="sbadge ${sc}">${g.status}</span></div>
+    </div>`;
+  }).join("");
+}
+
+// ─── ENDPOINTS FILTER ─────────────────────────────────────────────────────────
+let epFiltered = [...ALL_ENDPOINTS];
+function filterEP(){
+  const q=(document.getElementById("ep-q").value||"").toLowerCase();
+  const camp=document.getElementById("ep-campus").value;
+  const type=document.getElementById("ep-type").value;
+  const stat=document.getElementById("ep-status").value;
+  epFiltered=ALL_ENDPOINTS.filter(e=>{
+    if(camp&&e.campus!==camp)return false;
+    if(type&&e.type!==type)return false;
+    if(stat&&e.status!==stat)return false;
+    if(q&&!e.hostname.toLowerCase().includes(q)&&!e.ip.includes(q)&&!e.mac.toLowerCase().includes(q)&&!e.user.toLowerCase().includes(q))return false;
+    return true;
+  });
+  renderEP();
+}
+function renderEP(){
+  document.getElementById("ep-tbody").innerHTML=epFiltered.slice(0,100).map(e=>`<tr>
+    <td class="cgold">${e.id}</td>
+    <td style="font-weight:600">${e.hostname}</td>
+    <td style="color:var(--cyan)">${e.ip}</td>
+    <td style="color:var(--dim)">${e.mac}</td>
+    <td>${e.type}</td>
+    <td>${e.campus}</td>
+    <td style="color:var(--dim)">${e.dept}</td>
+    <td style="color:var(--dim)">${e.os}</td>
+    <td style="color:var(--dim)">${e.user}</td>
+    <td>${statusBadge(e.status)}</td>
+    <td>${statusBadge(e.av)}</td>
+  </tr>`).join("");
+  document.getElementById("ep-count").textContent=`Showing ${Math.min(epFiltered.length,100)} of ${epFiltered.length} records`;
+  document.getElementById("ep-badge").textContent=`${epFiltered.length} RECORDS`;
+}
+
+// ─── SYSLOG ───────────────────────────────────────────────────────────────────
+const netPool=[
+  ["I","SW-NASINU","Interface Gi0/1 UP — 1Gbps full duplex"],
+  ["W","FW-CORE","CPU 74% — high policy evaluation load"],
+  ["I","DHCP-01","Lease issued 10.20.45.112 → GPPC-SUV-041"],
+  ["I","AP-SUVA-04","Client assoc: EduRoam — 42 clients online"],
+  ["W","SW-LKA-01","Port Gi1/0/14 flapping — cable check needed"],
+  ["I","VPN-GW","Tunnel established — 203.87.x.x"],
+  ["I","DNS-01","Query: moodle.fnu.ac.fj → 10.50.1.20"],
+  ["E","AP-NDI-01","Deauth flood detected — MAC spoof suspect"],
+  ["I","RADIUS","Auth OK: jdoe@fnu.ac.fj AP-SUVA-08"],
+  ["W","SW-ACC-NDI-02","Port fault block C — 7 ports down"],
+  ["I","RTR-CORE","BGP UPDATE from 203.87.44.1"],
+  ["I","DHCP-01","Pool VLAN20 — 78% allocated"],
+];
+const siemPool=[
+  ["W","WAZUH","Brute force: 22 failed logins admin@fnu.ac.fj"],
+  ["E","CROWDSTRIKE","Malware quarantined: WS-SUV-014 Trojan.GenKD"],
+  ["I","FORTIANA","IPS signature update: 97 new rules applied"],
+  ["W","DLP","Large outbound: 14MB attachment — staff@fnu.ac.fj"],
+  ["E","SIEM","Phishing link clicked — student id 220xxxx"],
+  ["I","AD-AUDIT","Password reset: jsmith@fnu.ac.fj — helpdesk"],
+  ["W","FW-CORE","Geo-blocked: CN → 10.1.0.1"],
+  ["I","SIEM","Log ingestion 4,821 events/sec — nominal"],
+  ["E","EDR","Suspicious powershell.exe — GPPC-LKA-012"],
+  ["W","WAZUH","Unauth scan: 10.20.0.44 → 10.20.0.0/24"],
+  ["I","RADIUS","Auth fail: unknown device VLAN 90"],
+  ["W","WAZUH","PRINT-SUV-05: AV signatures outdated"],
+];
+
+function addLog(elId, pool){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  const [sev,src,msg]=pool[Math.floor(Math.random()*pool.length)];
+  const cls=sev==="E"?"log-se":sev==="W"?"log-sw":"log-si";
+  const div=document.createElement("div");
+  div.className="log-entry";
+  div.innerHTML=`<span class="log-ts">${fjtNow()}</span><span class="${cls}">[${sev}]</span><span class="log-src">${src}</span><span>${msg}</span>`;
+  el.insertBefore(div,el.firstChild);
+  if(el.children.length>80)el.removeChild(el.lastChild);
+}
+for(let i=0;i<14;i++){addLog("log-net",netPool);addLog("log-siem",siemPool);}
+setInterval(()=>addLog("log-net",netPool),3000);
+setInterval(()=>addLog("log-siem",siemPool),2700);
+
+// ─── AI CODEX ─────────────────────────────────────────────────────────────────
+const codexHistory=[];
+
+function buildSystemPrompt(){
+  return `You are the AI analyst for Fiji National University's Network Operations Center (NOC) and Security Operations Center (SOC), operated by the Division of IT Services (DITS).
+
+You have full visibility into the following live network data:
+
+CAMPUSES (6): Suva/Nasinu (624 devices, 1842 users, 100Mbps VF, ONLINE, 1 incident), Lautoka (284 devices, 623 users, 50Mbps ↑87%, DEGRADED, 2 incidents), Labasa (142 devices, 318 users, 20Mbps TFL, ONLINE), Ba (96 devices, 204 users, 20Mbps VF, ONLINE), Nadi/Namaka (98 devices, 287 users, 20Mbps TFL, PARTIAL, 1 incident), Koronivia (68 devices, 156 users, 10Mbps VF, ONLINE)
+
+ACTIVE ALERTS: [CRIT] Phishing — 3 staff accounts targeted, MFA bypass | [CRIT] MS365 Exchange Online degraded — incident MO-789432 | [WARN] Lautoka WAN 87% utilisation | [WARN] Moodle storage 78% | [CRIT] GP Lab Nadi 7 nodes offline — switch fault | [INFO] Backup FNU-NAS-02 completed 2.1TB | [OK] SW-NASINU restored | [WARN] EduRoam auth failures Suva 3x baseline | [WARN] PRINT-LKA-02 offline | [WARN] 2 CCTV cameras offline Suva
+
+NETWORK DEVICES (20): FW-CORE-01 (FortiGate 200F, 12% CPU, ACTIVE), FW-CORE-02 (HA Standby), RTR-CORE-01 (Cisco ISR 4451, 24% CPU), SW-CORE-SUVA (Cat9500, 14% CPU), SW-ACC-NDI-02 (FAULT), RTR-LKA-01 (61% CPU, WARN) + 14 others
+
+VLANs (11): VLAN10=Staff (412 devices, TRUST), VLAN20=Student (842 devices, SEMI-TRUST), VLAN30=MGMT (48, RESTRICTED), VLAN40=Admin (128, RESTRICTED), VLAN50=Servers (68, DMZ), VLAN60=VoIP (384, SEMI-TRUST), VLAN70=CCTV/IoT (148, ISOLATED), VLAN80=Printers (87, SEMI-TRUST), VLAN90=WiFi-Student (2400, SEMI-TRUST), VLAN91=WiFi-Staff (300, TRUST), VLAN99=Guest (UNTRUST)
+
+SERVERS (24): NUTX-NODE-01/02/03 (Nutanix AHV, CPU 29-41%, RAM 68-79%, HEALTHY), FNU-NAS-01 (disk 71%), VM-SIMS-APP (CPU 44%), VM-MOODLE-WEB (CPU 56%, disk 78% WARN), VM-WAZUH (CPU 64%), VM-AD-01/02 (RUNNING), VM-DNS/DHCP/RADIUS/VoIP/Print/PKI/Jira (all RUNNING)
+
+ACCESS POINTS (15): 48 Suva, 22/24 Lautoka (1 offline), 14 Labasa, 10 Ba, 12 Nadi, 8 Koronivia. Total 114/116 online. Rogue APs: 0. EduRoam auth 214 success/min, 8 fail/min.
+
+PRINTERS (15): PRINT-LKA-02 OFFLINE (toner 5%), PRINT-SUVA-05 WARN (toner 30%). All others ONLINE.
+
+VoIP: 384/400 extensions registered. FreePBX ONLINE. SIP trunks TFL+Vodafone ACTIVE. MOS 4.2.
+
+CCTV: 144/148 cameras online. 2 offline Suva, 2 offline Nadi. NVRs online.
+
+DEVICE TOTAL: 1,284 devices. 1,198 online. 61 warn/idle. 25 offline.
+
+SOC: Threat level ELEVATED. 1,247 threats blocked today. 34 phishing. 8 malware. 0 breaches. 156 brute force. FortiGate ACTIVE. Wazuh SIEM ONLINE. CrowdStrike EDR ACTIVE.
+
+SERVICES: SIMS ONLINE (34ms), Moodle ONLINE (62ms, storage 78% WARN), Exchange DEGRADED, Teams/SharePoint ONLINE, Nutanix HEALTHY, Veeam backup OK.
+
+Respond as a senior NOC/SOC analyst. Be concise, technical, and actionable. Use markdown. Reference device names, IPs, and data. FNU = Fiji National University.`;
+}
+
+async function sendCodex(text){
+  if(!text||text.trim()==="") return;
+  const msgs=document.getElementById("codex-messages");
+  const userDiv=document.createElement("div");
+  userDiv.className="msg-user";
+  userDiv.textContent=text;
+  msgs.appendChild(userDiv);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  codexHistory.push({role:"user",content:text});
+
+  const thinkDiv=document.createElement("div");
+  thinkDiv.className="msg-ai";
+  thinkDiv.innerHTML=`<span class="spin">&#x27F3;</span> <span style="color:var(--dim);font-family:var(--mono);font-size:10px">Analysing network data...</span>`;
+  msgs.appendChild(thinkDiv);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        system:buildSystemPrompt(),
+        messages:codexHistory,
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const reply=data.content?.map(b=>b.text||"").join("\n")||"No response.";
+    codexHistory.push({role:"assistant",content:reply});
+    thinkDiv.innerHTML=renderMd(reply);
+  }catch(e){
+    thinkDiv.innerHTML=`<span style="color:var(--red);font-family:var(--mono);font-size:10px">Error: ${e.message}</span>`;
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function sendCodexInput(){
+  const inp=document.getElementById("codex-input");
+  const val=inp.value.trim();
+  if(!val)return;
+  inp.value="";
+  sendCodex(val);
+}
+
+document.getElementById("codex-input").addEventListener("keydown",e=>{if(e.key==="Enter")sendCodexInput();});
+
+function renderMd(text){
+  return text
+    .replace(/\*\*(.+?)\*\*/g,`<strong style="color:var(--gold)">$1</strong>`)
+    .replace(/\*(.+?)\*/g,`<em style="color:var(--cyan)">$1</em>`)
+    .replace(/`(.+?)`/g,`<code style="background:rgba(200,168,75,.12);color:var(--gold);padding:1px 5px;border-radius:2px;font-size:10px;font-family:var(--mono)">$1</code>`)
+    .replace(/^### (.+)$/gm,`<div style="color:var(--gold);font-family:var(--head);font-size:10px;letter-spacing:2px;margin:8px 0 4px">$1</div>`)
+    .replace(/^## (.+)$/gm,`<div style="color:var(--gold);font-family:var(--head);font-size:11px;letter-spacing:2px;margin:10px 0 4px">$1</div>`)
+    .replace(/^- (.+)$/gm,`<div style="padding-left:12px;margin:2px 0">&#x2022; $1</div>`)
+    .replace(/\n/g,"<br/>");
+}
+
+// ─── VoIP live calls jitter ────────────────────────────────────────────────
+setInterval(()=>{
+  const el=document.getElementById("active-calls");
+  if(el) el.textContent=Math.floor(10+Math.random()*20);
+},8000);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderNetDev();
+renderVlans();
+renderServers();
+renderAPs();
+renderPrinters();
+renderAlerts();
+renderCampus();
+renderGPLabs();
+renderEP();
+</script>
+</body>
+</html>
