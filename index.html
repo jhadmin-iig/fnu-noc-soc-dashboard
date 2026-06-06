@@ -275,6 +275,7 @@ footer a{color:var(--gold);}
   <button class="tab-btn" onclick="showTab('alerts')">ALERTS</button>
   <button class="tab-btn" onclick="showTab('logs')">SYSLOG</button>
   <button class="tab-btn" onclick="showTab('topology')">TOPOLOGY</button>
+  <button class="tab-btn" onclick="showTab('ops')">IT OPS</button>
   <button class="tab-btn" onclick="showTab('admin')">ADMIN</button>
 </nav>
 
@@ -722,6 +723,69 @@ footer a{color:var(--gold);}
   </div>
 </div>
 
+<!-- IT OPERATIONS -->
+<div id="tab-ops" class="section">
+  <div class="section-title"><span>IT OPERATIONS COMMAND CENTER</span><span class="badge">ITSM / SRE</span></div>
+  <div class="g4">
+    <div class="panel">
+      <div class="panel-title">SERVICE HEALTH <span class="sbadge bg">18/21 OK</span></div>
+      <div id="ops-service-health"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">SLA / SLO TRACKING <span class="sbadge ba">2 RISKS</span></div>
+      <div id="ops-sla"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">INCIDENT QUEUE <span class="sbadge br">P1 ACTIVE</span></div>
+      <div id="ops-incidents"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">ON-CALL / ESCALATION <span class="sbadge bc">24x7</span></div>
+      <div id="ops-oncall"></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="panel">
+      <div class="panel-title">BACKUP / DR <span class="sbadge bg">PROTECTED</span></div>
+      <div id="ops-backup"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">CHANGE CALENDAR <span class="sbadge bgold">CAB</span></div>
+      <div id="ops-changes"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">CAPACITY FORECAST <span class="sbadge ba">WATCH</span></div>
+      <div id="ops-capacity"></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="panel">
+      <div class="panel-title">RUNBOOKS <span class="sbadge bc">READY</span></div>
+      <div id="ops-runbooks"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">COMPLIANCE / PATCHING <span class="sbadge ba">ACTION</span></div>
+      <div id="ops-compliance"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">VULNERABILITY & RISK <span class="sbadge br">ELEVATED</span></div>
+      <div id="ops-risk"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">PROFESSIONAL OPERATIONS CHECKLIST <span class="sbadge bgold">CONTROL ROOM</span></div>
+    <div class="g4" style="margin-bottom:0">
+      <div class="admin-kpi"><div class="k cg">99.1%</div><div class="l">SERVICE AVAILABILITY</div></div>
+      <div class="admin-kpi"><div class="k ca">47</div><div class="l">OPEN ITSM TICKETS</div></div>
+      <div class="admin-kpi"><div class="k cr2">3</div><div class="l">P1/P2 INCIDENTS</div></div>
+      <div class="admin-kpi"><div class="k cc">6</div><div class="l">ACTIVE CHANGES</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div id="tab-admin" class="section">
   <div class="section-title"><span>SITE ADMINISTRATION</span><span class="badge">WEBMASTER</span></div>
@@ -803,7 +867,7 @@ footer a{color:var(--gold);}
             <div>
               <label for="api-platform">Platform</label>
               <select id="api-platform">
-                <option>ServiceNow</option><option>FortiGate</option><option>Wazuh</option><option>Microsoft 365</option><option>SolarWinds</option><option>Zabbix</option><option>PRTG</option><option>Grafana</option><option>OpenAI</option><option>Anthropic</option><option>Custom REST</option>
+                <option>Jira</option><option>ServiceNow</option><option>FortiGate</option><option>Wazuh</option><option>Microsoft 365</option><option>SolarWinds</option><option>Zabbix</option><option>PRTG</option><option>Grafana</option><option>OpenAI</option><option>Anthropic</option><option>Custom REST</option>
               </select>
             </div>
             <div>
@@ -1077,6 +1141,62 @@ const GP_LABS = [
 ];
 
 // ─── ENDPOINT GENERATION ─────────────────────────────────────────────────────
+const OPS_SERVICES = [
+  {name:"SIMS",owner:"Applications",uptime:"99.8%",status:"ONLINE",note:"34ms avg"},
+  {name:"Moodle LMS",owner:"Applications",uptime:"99.2%",status:"WARN",note:"Storage 78%"},
+  {name:"Microsoft 365 Exchange",owner:"Cloud",uptime:"98.7%",status:"DEGRADED",note:"MO-789432"},
+  {name:"Teams / SharePoint",owner:"Cloud",uptime:"99.9%",status:"ONLINE",note:"Normal"},
+  {name:"Nutanix AHV",owner:"Infrastructure",uptime:"99.95%",status:"HEALTHY",note:"3 nodes OK"},
+  {name:"EduRoam / RADIUS",owner:"Network",uptime:"99.5%",status:"WARN",note:"Auth failures high"}
+];
+const OPS_SLA = [
+  {name:"P1 restoration",target:"4h",actual:"1h 20m",status:"ON TRACK"},
+  {name:"Service availability",target:"99.5%",actual:"99.1%",status:"AT RISK"},
+  {name:"Backup success",target:"98%",actual:"99.4%",status:"ON TRACK"},
+  {name:"Critical patching",target:"7 days",actual:"9 days",status:"BREACH RISK"}
+];
+const OPS_INCIDENTS = [
+  {id:"ITSM-2481",sev:"P1",title:"Phishing and MFA bypass attempt",owner:"SOC",eta:"45m",status:"ACTIVE"},
+  {id:"ITSM-2476",sev:"P2",title:"GP Lab Nadi switch block fault",owner:"Networks",eta:"2h",status:"IN PROGRESS"},
+  {id:"ITSM-2468",sev:"P2",title:"Exchange Online degraded",owner:"Cloud",eta:"Vendor",status:"MONITORING"},
+  {id:"ITSM-2459",sev:"P3",title:"Lautoka WAN utilisation",owner:"Networks",eta:"Today",status:"MITIGATING"}
+];
+const OPS_BACKUPS = [
+  {name:"FNU-NAS-02",scope:"2.1TB",rpo:"4h",rto:"8h",status:"OK"},
+  {name:"Nutanix VMs",scope:"68 VMs",rpo:"1h",rto:"4h",status:"OK"},
+  {name:"Moodle DB",scope:"420GB",rpo:"2h",rto:"4h",status:"WARN"},
+  {name:"AD System State",scope:"2 DCs",rpo:"24h",rto:"2h",status:"OK"}
+];
+const OPS_CHANGES = [
+  {id:"CHG-1034",time:"Tonight 22:00",title:"Firewall policy cleanup",risk:"Medium",status:"APPROVED"},
+  {id:"CHG-1035",time:"Fri 18:00",title:"Moodle storage expansion",risk:"Low",status:"PENDING CAB"},
+  {id:"CHG-1036",time:"Sun 09:00",title:"Lautoka switch replacement",risk:"High",status:"PLANNED"}
+];
+const OPS_CAPACITY = [
+  {name:"Moodle storage",used:78,trend:"+4% / month"},
+  {name:"Lautoka WAN",used:87,trend:"+11% / term"},
+  {name:"Nutanix RAM",used:74,trend:"+3% / month"},
+  {name:"EduRoam DHCP",used:72,trend:"+6% / term"}
+];
+const OPS_RUNBOOKS = [
+  {name:"P1 cyber incident",owner:"SOC Lead",ready:"READY"},
+  {name:"Campus WAN failover",owner:"Network Lead",ready:"READY"},
+  {name:"Nutanix node failure",owner:"Infrastructure",ready:"READY"},
+  {name:"Moodle outage",owner:"Applications",ready:"REVIEW"}
+];
+const OPS_COMPLIANCE = [
+  {name:"Windows critical patches",score:"91%",status:"WARN"},
+  {name:"EDR coverage",score:"97%",status:"OK"},
+  {name:"Privileged account review",score:"Due 5 days",status:"WARN"},
+  {name:"Backup restore test",score:"Passed",status:"OK"}
+];
+const OPS_RISK = [
+  {name:"Identity phishing",level:"HIGH",action:"MFA reset and session revoke"},
+  {name:"WAN congestion",level:"MEDIUM",action:"QoS and top-talker review"},
+  {name:"Storage growth",level:"MEDIUM",action:"Expand Moodle volume"},
+  {name:"Unpatched endpoints",level:"MEDIUM",action:"Force maintenance ring"}
+];
+
 const epConfig = [
   {campus:"SUVA",dept:"IT Office",type:"Workstation",os:"Windows 11 Pro",user:"itstaff",count:80},
   {campus:"SUVA",dept:"GP Lab A",type:"GP Lab",os:"Windows 11 Ed",user:"student.lab",count:40},
@@ -1151,7 +1271,7 @@ const ADMIN_TABS=[
   ["overview","Overview"],["codex","AI Analyst"],["endpoints","Endpoints"],["netdev","Network Devices"],
   ["vlans","VLANs"],["servers","Servers"],["wireless","Wireless / APs"],["voip","VoIP"],
   ["printers","Printers"],["cctv","CCTV / IoT"],["campus","Campus Net"],["gplabs","GP Labs"],
-  ["soc","SOC / Threats"],["alerts","Alerts"],["logs","Syslog"],["topology","Topology"]
+  ["soc","SOC / Threats"],["alerts","Alerts"],["logs","Syslog"],["topology","Topology"],["ops","IT Operations"]
 ];
 const DEFAULT_ADMIN_CONFIG={
   connectors:[],
@@ -1178,6 +1298,7 @@ function loadAdminConfig(){
     merged.reports={...DEFAULT_ADMIN_CONFIG.reports,...(saved.reports||{})};
     merged.emailAlerts={...DEFAULT_ADMIN_CONFIG.emailAlerts,...(saved.emailAlerts||{})};
     merged.visibleTabs=Array.isArray(saved.visibleTabs)?saved.visibleTabs:DEFAULT_ADMIN_CONFIG.visibleTabs;
+    DEFAULT_ADMIN_CONFIG.visibleTabs.forEach(id=>{if(!merged.visibleTabs.includes(id))merged.visibleTabs.push(id);});
     merged.connectors=Array.isArray(saved.connectors)?saved.connectors:[];
     merged.audit=Array.isArray(saved.audit)?saved.audit:[];
     return merged;
@@ -1465,6 +1586,37 @@ function getApiContext(){
   return active.map(c=>`${c.name} (${c.platform}) target=${c.target}, status=${c.lastStatus}, notes=${c.notes||"none"}`).join("; ");
 }
 
+function renderOpsList(id, rows, rowFn){
+  const el=document.getElementById(id);
+  if(el)el.innerHTML=rows.map(rowFn).join("");
+}
+function renderITOps(){
+  renderOpsList("ops-service-health",OPS_SERVICES,s=>`
+    <div class="svc-row"><div><div class="svc-name">${s.name}</div><div class="admin-row-meta">${s.owner} / ${s.note}</div></div><div>${statusBadge(s.status)}<div class="admin-row-meta" style="text-align:right">${s.uptime}</div></div></div>`);
+  renderOpsList("ops-sla",OPS_SLA,s=>`
+    <div class="svc-row"><div><div class="svc-name">${s.name}</div><div class="admin-row-meta">Target ${s.target} / Actual ${s.actual}</div></div>${statusBadge(s.status)}</div>`);
+  renderOpsList("ops-incidents",OPS_INCIDENTS,i=>`
+    <div class="alert-item ${i.sev==="P1"?"crit":"warn"}"><div><div class="alert-time">${i.id}</div><div style="font-family:var(--mono);font-size:8px;color:${i.sev==="P1"?"var(--red)":"var(--amber)"}">${i.sev}</div></div><div><div class="alert-msg">${i.title}</div><div class="alert-sub">${i.owner} / ETA ${i.eta} / ${i.status}</div></div></div>`);
+  renderOpsList("ops-oncall",[
+    {role:"Incident Commander",name:"SOC Lead",phone:"Ext 4401",status:"PRIMARY"},
+    {role:"Network Escalation",name:"Network Lead",phone:"Ext 4430",status:"READY"},
+    {role:"Infrastructure",name:"Systems Lead",phone:"Ext 4460",status:"READY"},
+    {role:"Comms",name:"Service Desk Lead",phone:"Ext 1111",status:"READY"}
+  ],o=>`<div class="svc-row"><div><div class="svc-name">${o.role}</div><div class="admin-row-meta">${o.name} / ${o.phone}</div></div>${statusBadge(o.status)}</div>`);
+  renderOpsList("ops-backup",OPS_BACKUPS,b=>`
+    <div class="svc-row"><div><div class="svc-name">${b.name}</div><div class="admin-row-meta">${b.scope} / RPO ${b.rpo} / RTO ${b.rto}</div></div>${statusBadge(b.status)}</div>`);
+  renderOpsList("ops-changes",OPS_CHANGES,c=>`
+    <div class="svc-row"><div><div class="svc-name">${c.id} - ${c.title}</div><div class="admin-row-meta">${c.time} / Risk ${c.risk}</div></div>${statusBadge(c.status)}</div>`);
+  renderOpsList("ops-capacity",OPS_CAPACITY,c=>`
+    <div class="pbar-wrap"><div class="pbar-label"><span>${c.name}</span><span>${c.used}% / ${c.trend}</span></div><div class="pbar"><div class="pbar-fill" style="width:${c.used}%;background:${c.used>85?"var(--red)":c.used>75?"var(--amber)":"var(--green)"}"></div></div></div>`);
+  renderOpsList("ops-runbooks",OPS_RUNBOOKS,r=>`
+    <div class="svc-row"><div><div class="svc-name">${r.name}</div><div class="admin-row-meta">Owner: ${r.owner}</div></div>${statusBadge(r.ready)}</div>`);
+  renderOpsList("ops-compliance",OPS_COMPLIANCE,c=>`
+    <div class="svc-row"><div><div class="svc-name">${c.name}</div><div class="admin-row-meta">${c.score}</div></div>${statusBadge(c.status)}</div>`);
+  renderOpsList("ops-risk",OPS_RISK,r=>`
+    <div class="svc-row"><div><div class="svc-name">${r.name}</div><div class="admin-row-meta">${r.action}</div></div><span class="sbadge ${r.level==="HIGH"?"br":"ba"}">${r.level}</span></div>`);
+}
+
 function incidentAnalysis(alert){
   const text=`${alert.msg} ${alert.sub}`.toLowerCase();
   if(text.includes("phishing")||text.includes("mfa")){
@@ -1507,11 +1659,15 @@ function generateReportText(){
   const offline=ALL_ENDPOINTS.filter(e=>e.status==="OFFLINE").length;
   const warnEp=ALL_ENDPOINTS.filter(e=>e.status==="WARN"||e.status==="IDLE").length;
   const highWan=CAMPUSES.filter(c=>c.wan.includes("87%")).map(c=>c.name).join(", ")||"None";
+  const p1=OPS_INCIDENTS.filter(i=>i.sev==="P1").length;
+  const slaRisks=OPS_SLA.filter(s=>s.status.includes("RISK")).length;
+  const changeCount=OPS_CHANGES.length;
+  const backupWarn=OPS_BACKUPS.filter(b=>b.status!=="OK").length;
   const topRisks=ALERTS.filter(a=>a.sev==="CRIT"||a.sev==="WARN").slice(0,5).map(a=>{
     const detail=incidentAnalysis(a);
     return `- ${a.sev}: ${a.msg} (${a.sub})\n  Likely root cause: ${detail.root}\n  Recommended solution: ${detail.solution}`;
   }).join("\n");
-  return `${reportWindowText(cfg.reports.frequency)}\nFNU NOC/SOC - ${cfg.reports.format}\nGenerated: ${new Date().toLocaleString()}\nRecipients: ${cfg.reports.recipients||"Not configured"}\n\nExecutive Summary\n- Overall uptime remains at 99.1% with 1,198 of 1,284 devices online.\n- Current risk level is elevated: ${crit.length} critical incidents and ${warn.length} warnings are active.\n- Endpoint health: ${offline} offline endpoints and ${warnEp} warn/idle endpoints require follow-up.\n- WAN pressure: ${highWan} requires capacity and top-talker review.\n- External API feeds configured: ${connectors.length?connectors.map(c=>`${c.name} (${c.platform}: ${c.lastStatus})`).join(", "):"None"}.\n\nKey Incidents, Root Cause and Recommended Action\n${topRisks}\n\nOperational Priorities\n1. Resolve CRIT alerts first: phishing/MFA, Microsoft 365 degradation, and GP Lab Nadi switch fault.\n2. Review WAN utilisation and Moodle storage before thresholds are breached.\n3. Confirm all configured API connectors are tested and mapped to dashboard targets.\n4. Send stakeholder update after incident owner, ETA, and service impact are confirmed.\n\nManagement Summary\nServices are operating with acceptable availability, but cyber and infrastructure warnings require active management. Immediate focus should remain on identity protection, degraded cloud email service, and access-layer faults affecting teaching labs.`;
+  return `${reportWindowText(cfg.reports.frequency)}\nFNU NOC/SOC - ${cfg.reports.format}\nGenerated: ${new Date().toLocaleString()}\nRecipients: ${cfg.reports.recipients||"Not configured"}\n\nExecutive Summary\n- Overall uptime remains at 99.1% with 1,198 of 1,284 devices online.\n- Current risk level is elevated: ${crit.length} critical incidents and ${warn.length} warnings are active.\n- Endpoint health: ${offline} offline endpoints and ${warnEp} warn/idle endpoints require follow-up.\n- WAN pressure: ${highWan} requires capacity and top-talker review.\n- IT operations: ${p1} P1 incident(s), ${slaRisks} SLA/SLO risk(s), ${changeCount} active/planned change(s), and ${backupWarn} backup warning(s).\n- External API feeds configured: ${connectors.length?connectors.map(c=>`${c.name} (${c.platform}: ${c.lastStatus})`).join(", "):"None"}.\n\nKey Incidents, Root Cause and Recommended Action\n${topRisks}\n\nOperational Priorities\n1. Resolve CRIT alerts first: phishing/MFA, Microsoft 365 degradation, and GP Lab Nadi switch fault.\n2. Review WAN utilisation, Moodle storage, SLA risks, and backup warnings before thresholds are breached.\n3. Confirm all configured API connectors, including Jira if used, are tested and mapped to dashboard targets.\n4. Validate CAB changes, runbooks, on-call ownership, and stakeholder updates for every P1/P2 incident.\n\nManagement Summary\nServices are operating with acceptable availability, but cyber, infrastructure, and IT operations warnings require active management. Immediate focus should remain on identity protection, degraded cloud email service, access-layer faults affecting teaching labs, SLA risks, and capacity hot spots.`;
 }
 function generateHighLevelReport(){
   const cfg=loadAdminConfig();
@@ -1804,6 +1960,8 @@ SOC: Threat level ELEVATED. 1,247 threats blocked today. 34 phishing. 8 malware.
 
 SERVICES: SIMS ONLINE (34ms), Moodle ONLINE (62ms, storage 78% WARN), Exchange DEGRADED, Teams/SharePoint ONLINE, Nutanix HEALTHY, Veeam backup OK.
 
+IT OPERATIONS: ITSM queue has 47 open tickets, active P1 ITSM-2481 phishing/MFA, P2 GP Lab Nadi switch fault, P2 Exchange Online degradation, SLA availability at risk (99.1% vs 99.5%), 6 active/planned changes, backups protected with Moodle DB warning, runbooks ready for P1 cyber, WAN failover, Nutanix node failure, and Moodle outage.
+
 EXTERNAL API CONNECTORS: ${getApiContext()}
 
 Respond as a senior NOC/SOC analyst. Be concise, technical, and actionable. Use markdown. Reference device names, IPs, and data. FNU = Fiji National University.`;
@@ -1885,6 +2043,7 @@ renderAlerts();
 renderCampus();
 renderGPLabs();
 renderEP();
+renderITOps();
 renderAdmin();
 renderApiMonitor();
 applyDashboardVisibility();
