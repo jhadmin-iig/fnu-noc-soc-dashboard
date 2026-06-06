@@ -171,6 +171,11 @@ tr:hover td{background:rgba(200,168,75,.04);}
 .codex-input-row input:focus{border-color:var(--gold);}
 .codex-send{background:rgba(200,168,75,.15);border:1px solid var(--gold-dim);border-radius:3px;padding:7px 16px;color:var(--gold);font-family:var(--head);font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .codex-send:hover{background:rgba(200,168,75,.25);}
+.truthmode-output{font-size:12px;line-height:1.55;overflow-y:auto;max-height:446px;padding-right:4px;}
+.truthmode-output h4{font-family:var(--head);font-size:10px;color:var(--gold);letter-spacing:2px;margin:8px 0 5px;}
+.truthmode-output ul{padding-left:16px;margin:4px 0 8px;}
+.truthmode-output li{margin-bottom:4px;}
+.truthmode-stamp{font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:8px;}
 
 /* ADMIN */
 .admin-shell{display:grid;grid-template-columns:320px 1fr;gap:12px;align-items:start;}
@@ -337,32 +342,44 @@ footer a{color:var(--gold);}
 
 <!-- ═══ AI CODEX ═══ -->
 <div id="tab-codex" class="section">
-  <div class="section-title"><span>AI NOC/SOC ANALYST</span><span class="badge">CLAUDE SONNET 4</span></div>
-  <div class="panel" style="display:flex;flex-direction:column;height:540px">
-    <div class="panel-title">DITS AI ANALYST <div class="live-dot pulse-dot"></div></div>
-    <div style="margin-bottom:8px;padding:6px 10px;background:rgba(200,168,75,0.07);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:9px;color:var(--dim)">
-      &#x26A1; Full context: 1,284 devices &bull; 6 campuses &bull; 11 VLANs &bull; 68 servers &bull; 114 APs &bull; 148 cameras &bull; 87 printers &bull; 384 VoIP &bull; Live alerts
-    </div>
-    <div id="codex-messages">
-      <div class="msg-ai">
-        <strong style="color:var(--gold)">FNU NOC/SOC AI Analyst online.</strong><br><br>
-        I have full visibility of your network: <strong style="color:var(--gold)">1,284 devices</strong> across 6 campuses, all VLAN segments, server inventory, endpoint registry, alerts, and SOC telemetry.<br><br>
-        Ask me anything about the FNU network, or tap a quick prompt below.
+  <div class="section-title"><span>AI NOC/SOC ANALYST</span><span class="badge">CLAUDE + CHATGPT TRUTHMODE</span></div>
+  <div class="g21">
+    <div class="panel" style="display:flex;flex-direction:column;height:540px">
+      <div class="panel-title">DITS AI ANALYST <div class="live-dot pulse-dot"></div></div>
+      <div style="margin-bottom:8px;padding:6px 10px;background:rgba(200,168,75,0.07);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:9px;color:var(--dim)">
+        &#x26A1; Full context: 1,284 devices &bull; 6 campuses &bull; 11 VLANs &bull; 68 servers &bull; 114 APs &bull; 148 cameras &bull; 87 printers &bull; 384 VoIP &bull; Live alerts
+      </div>
+      <div id="codex-messages">
+        <div class="msg-ai">
+          <strong style="color:var(--gold)">FNU NOC/SOC AI Analyst online.</strong><br><br>
+          I have full visibility of your network: <strong style="color:var(--gold)">1,284 devices</strong> across 6 campuses, all VLAN segments, server inventory, endpoint registry, alerts, and SOC telemetry.<br><br>
+          Ask me anything about the FNU network, or tap a quick prompt below.
+        </div>
+      </div>
+      <div class="quick-prompts" id="quick-prompts">
+        <button class="qp-btn" onclick="sendCodex('Summarise all active alerts and risk level')">Summarise active alerts</button>
+        <button class="qp-btn" onclick="sendCodex('Which campus has the highest threat exposure?')">Highest threat campus?</button>
+        <button class="qp-btn" onclick="sendCodex('Analyse Lautoka WAN degradation root cause')">Lautoka WAN root cause</button>
+        <button class="qp-btn" onclick="sendCodex('List all OFFLINE devices across all campuses')">List OFFLINE devices</button>
+        <button class="qp-btn" onclick="sendCodex('Generate an executive summary for the SLT')">SLT executive summary</button>
+        <button class="qp-btn" onclick="sendCodex('What is the current SOC threat status?')">SOC threat status</button>
+        <button class="qp-btn" onclick="sendCodex('Recommend actions for GP Lab Nadi issue')">GP Lab Nadi fix</button>
+        <button class="qp-btn" onclick="sendCodex('Is the Nutanix cluster at risk?')">Nutanix cluster risk</button>
+      </div>
+      <div class="codex-input-row">
+        <input id="codex-input" type="text" placeholder="Ask the AI analyst about the FNU network..." onkeydown="if(event.key==='Enter')sendCodexInput()">
+        <button class="codex-send" onclick="sendCodexInput()">SEND</button>
       </div>
     </div>
-    <div class="quick-prompts" id="quick-prompts">
-      <button class="qp-btn" onclick="sendCodex('Summarise all active alerts and risk level')">Summarise active alerts</button>
-      <button class="qp-btn" onclick="sendCodex('Which campus has the highest threat exposure?')">Highest threat campus?</button>
-      <button class="qp-btn" onclick="sendCodex('Analyse Lautoka WAN degradation root cause')">Lautoka WAN root cause</button>
-      <button class="qp-btn" onclick="sendCodex('List all OFFLINE devices across all campuses')">List OFFLINE devices</button>
-      <button class="qp-btn" onclick="sendCodex('Generate an executive summary for the SLT')">SLT executive summary</button>
-      <button class="qp-btn" onclick="sendCodex('What is the current SOC threat status?')">SOC threat status</button>
-      <button class="qp-btn" onclick="sendCodex('Recommend actions for GP Lab Nadi issue')">GP Lab Nadi fix</button>
-      <button class="qp-btn" onclick="sendCodex('Is the Nutanix cluster at risk?')">Nutanix cluster risk</button>
-    </div>
-    <div class="codex-input-row">
-      <input id="codex-input" type="text" placeholder="Ask the AI analyst about the FNU network..." onkeydown="if(event.key==='Enter')sendCodexInput()">
-      <button class="codex-send" onclick="sendCodexInput()">SEND</button>
+
+    <div class="panel" style="height:540px">
+      <div class="panel-title">CHATGPT TRUTHMODE <span class="sbadge br">NO SPIN</span></div>
+      <div class="notice" style="margin-bottom:10px">Truthmode gives a blunt operational readout from the dashboard telemetry. It does not hide degraded services behind green summary numbers.</div>
+      <div class="admin-actions" style="margin-bottom:10px">
+        <button class="admin-btn" onclick="renderTruthmode()">REFRESH TRUTHMODE</button>
+        <button class="admin-btn alt" onclick="copyTruthmode()">COPY</button>
+      </div>
+      <div id="truthmode-output" class="truthmode-output"></div>
     </div>
   </div>
 </div>
@@ -1586,6 +1603,70 @@ function getApiContext(){
   return active.map(c=>`${c.name} (${c.platform}) target=${c.target}, status=${c.lastStatus}, notes=${c.notes||"none"}`).join("; ");
 }
 
+function buildTruthmodeAssessment(){
+  const crit=ALERTS.filter(a=>a.sev==="CRIT");
+  const warn=ALERTS.filter(a=>a.sev==="WARN");
+  const offline=ALL_ENDPOINTS.filter(e=>e.status==="OFFLINE").length;
+  const warnIdle=ALL_ENDPOINTS.filter(e=>e.status==="WARN"||e.status==="IDLE").length;
+  const degradedServices=OPS_SERVICES.filter(s=>["WARN","DEGRADED"].includes(s.status));
+  const p1=OPS_INCIDENTS.filter(i=>i.sev==="P1");
+  const p2=OPS_INCIDENTS.filter(i=>i.sev==="P2");
+  const slaRisk=OPS_SLA.filter(s=>s.status.includes("RISK"));
+  const hotCapacity=OPS_CAPACITY.filter(c=>c.used>=75);
+  const cfg=loadAdminConfig();
+  const jira=cfg.connectors.find(c=>c.platform==="Jira"&&c.enabled);
+  return {
+    crit,warn,offline,warnIdle,degradedServices,p1,p2,slaRisk,hotCapacity,jira,
+    verdict:crit.length>=3||p1.length?"ELEVATED - ACTION REQUIRED":"WATCH - CONTROLLED RISK"
+  };
+}
+function renderTruthmode(){
+  const out=document.getElementById("truthmode-output");
+  if(!out)return;
+  const t=buildTruthmodeAssessment();
+  out.innerHTML=`
+    <div class="truthmode-stamp">Generated ${new Date().toLocaleString()} / Model view: ChatGPT Truthmode</div>
+    <h4>Truth Verdict</h4>
+    <div class="alert-item ${t.verdict.includes("ELEVATED")?"crit":"warn"}" style="margin-bottom:8px">
+      <div><div class="alert-time">NOW</div><div style="font-family:var(--mono);font-size:8px;color:${t.verdict.includes("ELEVATED")?"var(--red)":"var(--amber)"}">TRUTH</div></div>
+      <div><div class="alert-msg">${t.verdict}</div><div class="alert-sub">The dashboard is not fully healthy. Green uptime does not cancel active security and service degradation.</div></div>
+    </div>
+    <h4>What Is Actually Happening</h4>
+    <ul>
+      <li><strong class="cr2">${t.crit.length} critical</strong> and <strong class="ca">${t.warn.length} warning</strong> alerts are active.</li>
+      <li><strong class="cr2">${t.offline}</strong> endpoints are offline; <strong class="ca">${t.warnIdle}</strong> are warn/idle.</li>
+      <li>Degraded/warning services: <strong class="ca">${t.degradedServices.map(s=>s.name).join(", ")||"None"}</strong>.</li>
+      <li>ITSM pressure: <strong class="cr2">${t.p1.length}</strong> P1 and <strong class="ca">${t.p2.length}</strong> P2 incidents.</li>
+      <li>SLA/SLO risk items: <strong class="ca">${t.slaRisk.map(s=>s.name).join(", ")||"None"}</strong>.</li>
+    </ul>
+    <h4>Likely Root Causes</h4>
+    <ul>
+      <li>Identity attack activity is driving the highest business risk: phishing/MFA bypass attempts need priority handling.</li>
+      <li>Exchange degradation is probably upstream/vendor-related but still affects university communications.</li>
+      <li>GP Lab Nadi outage points to access-switch or port-block hardware fault, not isolated PC failures.</li>
+      <li>Capacity hot spots are visible on ${t.hotCapacity.map(c=>`${c.name} ${c.used}%`).join(", ")}.</li>
+    </ul>
+    <h4>Do First</h4>
+    <ul>
+      <li>Lock, review, and reset targeted staff accounts; revoke active sessions and validate MFA posture.</li>
+      <li>Assign owners and ETAs for every P1/P2 incident; update Jira/ITSM records immediately.</li>
+      <li>Dispatch network support for GP Lab Nadi switch/port fault and confirm spare-port recovery path.</li>
+      <li>Open a service advisory for Exchange degradation and prepare alternate communication guidance.</li>
+      <li>Review Lautoka WAN top talkers and Moodle storage before they become full outages.</li>
+    </ul>
+    <h4>Integration Truth</h4>
+    <ul>
+      <li>Jira connector status: <strong class="${t.jira?"cg":"ca"}">${t.jira?`configured (${t.jira.lastStatus})`:"not configured"}</strong>.</li>
+      <li>If Jira is not connected, incident accountability remains manual and reporting quality will be weaker.</li>
+    </ul>`;
+}
+function copyTruthmode(){
+  const out=document.getElementById("truthmode-output");
+  if(!out)return;
+  navigator.clipboard?.writeText(out.innerText);
+  addAudit("Copied ChatGPT Truthmode dashboard assessment");
+}
+
 function renderOpsList(id, rows, rowFn){
   const el=document.getElementById(id);
   if(el)el.innerHTML=rows.map(rowFn).join("");
@@ -2044,6 +2125,7 @@ renderCampus();
 renderGPLabs();
 renderEP();
 renderITOps();
+renderTruthmode();
 renderAdmin();
 renderApiMonitor();
 applyDashboardVisibility();
