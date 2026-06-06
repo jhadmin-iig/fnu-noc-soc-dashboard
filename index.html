@@ -170,6 +170,37 @@ tr:hover td{background:rgba(200,168,75,.04);}
 .codex-send{background:rgba(200,168,75,.15);border:1px solid var(--gold-dim);border-radius:3px;padding:7px 16px;color:var(--gold);font-family:var(--head);font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .codex-send:hover{background:rgba(200,168,75,.25);}
 
+/* ADMIN */
+.admin-shell{display:grid;grid-template-columns:320px 1fr;gap:12px;align-items:start;}
+.admin-login{max-width:460px;margin:28px auto;background:rgba(0,33,71,.76);border:1px solid var(--border);border-radius:4px;padding:18px;box-shadow:0 0 30px rgba(0,212,255,.08);}
+.admin-form{display:grid;gap:10px;}
+.admin-form label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.admin-form input,.admin-form select,.admin-form textarea{width:100%;background:rgba(0,20,50,.85);border:1px solid var(--border);border-radius:3px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;}
+.admin-form textarea{min-height:72px;resize:vertical;}
+.admin-form input:focus,.admin-form select:focus,.admin-form textarea:focus{border-color:var(--gold);}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.admin-btn{background:rgba(200,168,75,.15);border:1px solid var(--gold-dim);border-radius:3px;padding:7px 12px;color:var(--gold);font-family:var(--head);font-size:9px;letter-spacing:2px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.admin-btn:hover{background:rgba(200,168,75,.25);}
+.admin-btn.alt{background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.35);color:var(--cyan);}
+.admin-btn.danger{background:rgba(255,51,85,.08);border-color:rgba(255,51,85,.4);color:var(--red);}
+.admin-side{display:grid;gap:10px;}
+.admin-status{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.admin-kpi{background:rgba(0,20,50,.62);border:1px solid rgba(200,168,75,.14);border-radius:3px;padding:9px;}
+.admin-kpi .k{font-family:var(--head);font-size:18px;font-weight:900;}
+.admin-kpi .l{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;margin-top:2px;}
+.admin-list{display:grid;gap:7px;}
+.admin-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:rgba(0,20,50,.45);border:1px solid rgba(200,168,75,.12);border-radius:3px;padding:9px;}
+.admin-row-title{font-family:var(--head);font-size:10px;color:var(--gold);letter-spacing:1px;}
+.admin-row-meta{font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;word-break:break-word;}
+.toggle-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(200,168,75,.07);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-row label{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--text);}
+.toggle-row input{accent-color:#C8A84B;}
+.notice{font-family:var(--mono);font-size:10px;line-height:1.5;color:var(--dim);background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.25);border-radius:3px;padding:9px;}
+.api-monitor-panel{margin-bottom:14px;}
+@media(max-width:980px){.admin-shell{grid-template-columns:1fr}.admin-status{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:620px){.admin-status{grid-template-columns:repeat(2,1fr)}.admin-actions{align-items:stretch}.admin-btn{flex:1}.admin-row{grid-template-columns:1fr}.api-monitor-panel .g3{grid-template-columns:1fr}}
+
 /* FOOTER */
 footer{border-top:1px solid var(--border);padding:14px 16px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px;position:relative;z-index:1;}
 footer a{color:var(--gold);}
@@ -242,6 +273,7 @@ footer a{color:var(--gold);}
   <button class="tab-btn" onclick="showTab('alerts')">ALERTS</button>
   <button class="tab-btn" onclick="showTab('logs')">SYSLOG</button>
   <button class="tab-btn" onclick="showTab('topology')">TOPOLOGY</button>
+  <button class="tab-btn" onclick="showTab('admin')">ADMIN</button>
 </nav>
 
 <main>
@@ -249,6 +281,10 @@ footer a{color:var(--gold);}
 <!-- ═══ OVERVIEW ═══ -->
 <div id="tab-overview" class="section active">
   <div class="section-title"><span>NETWORK OVERVIEW</span><span class="badge">LIVE</span></div>
+  <div id="api-monitor-panel" class="panel api-monitor-panel">
+    <div class="panel-title">EXTERNAL API MONITORING <span class="sbadge bc" id="api-monitor-count">0 CONNECTORS</span></div>
+    <div id="api-monitor-list" class="g3" style="margin-bottom:0"></div>
+  </div>
   <div class="g4">
     <div class="panel">
       <div class="panel-title">DEVICE INVENTORY <div class="live-dot pulse-dot"></div></div>
@@ -684,6 +720,157 @@ footer a{color:var(--gold);}
   </div>
 </div>
 
+<!-- ADMIN -->
+<div id="tab-admin" class="section">
+  <div class="section-title"><span>SITE ADMINISTRATION</span><span class="badge">WEBMASTER</span></div>
+
+  <div id="admin-login" class="admin-login">
+    <div class="panel-title">WEBMASTER LOGIN <span class="sbadge bc">LOCAL ADMIN</span></div>
+    <div class="notice" style="margin-bottom:12px">
+      Static GitHub Pages demo login. Default: <span class="cgold">webmaster</span> / <span class="cgold">fnu-admin</span>. For production, move authentication and API secrets to a secure server or API gateway.
+    </div>
+    <div class="admin-form">
+      <div>
+        <label for="admin-user">Username</label>
+        <input id="admin-user" autocomplete="username" placeholder="webmaster">
+      </div>
+      <div>
+        <label for="admin-pass">Password</label>
+        <input id="admin-pass" type="password" autocomplete="current-password" placeholder="Enter password">
+      </div>
+      <div class="admin-actions">
+        <button class="admin-btn" onclick="adminLogin()">LOGIN</button>
+        <span id="admin-login-msg" class="cdim" style="font-family:var(--mono);font-size:10px"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-console" class="admin-shell" style="display:none">
+    <div class="admin-side">
+      <div class="panel">
+        <div class="panel-title">ADMIN STATUS <span class="sbadge bg">SIGNED IN</span></div>
+        <div class="admin-status">
+          <div class="admin-kpi"><div class="k cgold" id="admin-kpi-connectors">0</div><div class="l">CONNECTORS</div></div>
+          <div class="admin-kpi"><div class="k cg" id="admin-kpi-enabled">0</div><div class="l">VISIBLE TABS</div></div>
+          <div class="admin-kpi"><div class="k cc" id="admin-kpi-refresh">60s</div><div class="l">REFRESH</div></div>
+          <div class="admin-kpi"><div class="k ca" id="admin-kpi-maint">OFF</div><div class="l">MAINTENANCE</div></div>
+        </div>
+        <div class="admin-actions" style="margin-top:10px">
+          <button class="admin-btn alt" onclick="exportAdminConfig()">EXPORT</button>
+          <button class="admin-btn alt" onclick="document.getElementById('admin-import').click()">IMPORT</button>
+          <button class="admin-btn danger" onclick="resetAdminConfig()">RESET</button>
+          <button class="admin-btn" onclick="adminLogout()">LOGOUT</button>
+          <input id="admin-import" type="file" accept="application/json" style="display:none" onchange="importAdminConfig(event)">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">DASHBOARD ITEMS</div>
+        <div id="admin-visibility-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">MAINTENANCE</div>
+        <div class="toggle-row"><label><input type="checkbox" id="admin-maintenance" onchange="saveAdminSettings()"> Maintenance banner</label><span class="sbadge ba">SITE</span></div>
+        <div class="toggle-row"><label><input type="checkbox" id="admin-readonly" onchange="saveAdminSettings()"> Read-only mode</label><span class="sbadge bc">OPS</span></div>
+        <div class="admin-form" style="margin-top:8px">
+          <div>
+            <label for="admin-banner">Operator Banner</label>
+            <input id="admin-banner" placeholder="e.g. Planned maintenance 22:00 FJT" oninput="saveAdminSettings()">
+          </div>
+          <div>
+            <label for="admin-refresh">API Refresh Seconds</label>
+            <input id="admin-refresh" type="number" min="15" step="15" value="60" oninput="saveAdminSettings()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-side">
+      <div class="panel">
+        <div class="panel-title">ADD API CONNECTOR <span class="sbadge bc">ANY PLATFORM</span></div>
+        <div class="notice" style="margin-bottom:10px">
+          API keys entered here are stored in this browser only. Public static hosting should use a server-side proxy for production credentials.
+        </div>
+        <div class="admin-form">
+          <div class="g3" style="margin-bottom:0">
+            <div>
+              <label for="api-name">Display Name</label>
+              <input id="api-name" placeholder="ServiceNow Incidents">
+            </div>
+            <div>
+              <label for="api-platform">Platform</label>
+              <select id="api-platform">
+                <option>ServiceNow</option><option>FortiGate</option><option>Wazuh</option><option>Microsoft 365</option><option>SolarWinds</option><option>Zabbix</option><option>PRTG</option><option>Grafana</option><option>OpenAI</option><option>Anthropic</option><option>Custom REST</option>
+              </select>
+            </div>
+            <div>
+              <label for="api-method">Method</label>
+              <select id="api-method"><option>GET</option><option>POST</option><option>PUT</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="api-url">Endpoint URL</label>
+            <input id="api-url" placeholder="https://api.example.com/v1/status">
+          </div>
+          <div class="g3" style="margin-bottom:0">
+            <div>
+              <label for="api-auth">Auth Type</label>
+              <select id="api-auth"><option>None</option><option>Bearer Token</option><option>API Key Header</option><option>Basic</option></select>
+            </div>
+            <div>
+              <label for="api-token">Token / Secret</label>
+              <input id="api-token" type="password" placeholder="Stored locally">
+            </div>
+            <div>
+              <label for="api-target">Display Target</label>
+              <select id="api-target"><option>Overview Monitor</option><option>AI Analyst Context</option><option>Alerts</option><option>Syslog</option><option>Admin Only</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="api-notes">Mapping / Notes</label>
+            <textarea id="api-notes" placeholder="Example: status=data.health, metric=data.openIncidents, severity=data.priority"></textarea>
+          </div>
+          <div class="admin-actions">
+            <button class="admin-btn" onclick="addApiConnector()">ADD CONNECTOR</button>
+            <button class="admin-btn alt" onclick="testApiConnector()">TEST ENDPOINT</button>
+            <span id="api-test-result" class="cdim" style="font-family:var(--mono);font-size:10px"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="panel">
+          <div class="panel-title">API CONNECTORS</div>
+          <div id="admin-api-list" class="admin-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">ALERT THRESHOLDS</div>
+          <div class="admin-form">
+            <div>
+              <label for="threshold-cpu">CPU Warning %</label>
+              <input id="threshold-cpu" type="number" min="1" max="100" value="70" oninput="saveAdminSettings()">
+            </div>
+            <div>
+              <label for="threshold-disk">Disk Warning %</label>
+              <input id="threshold-disk" type="number" min="1" max="100" value="80" oninput="saveAdminSettings()">
+            </div>
+            <div>
+              <label for="threshold-wan">WAN Warning %</label>
+              <input id="threshold-wan" type="number" min="1" max="100" value="85" oninput="saveAdminSettings()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">ADMIN AUDIT LOG <span class="sbadge bgold">LOCAL</span></div>
+        <div id="admin-audit" class="log-stream" style="height:190px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <footer>
@@ -884,8 +1071,11 @@ function zoneClass(z){if(z==="TRUST")return "bg";if(z==="RESTRICTED"||z==="ISOLA
 function showTab(id){
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("tab-"+id).classList.add("active");
-  event.currentTarget.classList.add("active");
+  const section=document.getElementById("tab-"+id);
+  if(section)section.classList.add("active");
+  const source=window.event&&window.event.currentTarget;
+  const btn=source||Array.from(document.querySelectorAll(".tab-btn")).find(b=>b.getAttribute("onclick")===`showTab('${id}')`);
+  if(btn)btn.classList.add("active");
 }
 
 // ─── CLOCKS ──────────────────────────────────────────────────────────────────
@@ -896,6 +1086,305 @@ setInterval(()=>{
 },1000);
 
 // ─── RENDER TABLES ───────────────────────────────────────────────────────────
+// ADMIN CONFIG
+const ADMIN_STORAGE_KEY="fnuNocSocAdminConfig";
+const ADMIN_SESSION_KEY="fnuNocSocAdminSession";
+const ADMIN_TABS=[
+  ["overview","Overview"],["codex","AI Analyst"],["endpoints","Endpoints"],["netdev","Network Devices"],
+  ["vlans","VLANs"],["servers","Servers"],["wireless","Wireless / APs"],["voip","VoIP"],
+  ["printers","Printers"],["cctv","CCTV / IoT"],["campus","Campus Net"],["gplabs","GP Labs"],
+  ["soc","SOC / Threats"],["alerts","Alerts"],["logs","Syslog"],["topology","Topology"]
+];
+const DEFAULT_ADMIN_CONFIG={
+  connectors:[],
+  visibleTabs:ADMIN_TABS.map(t=>t[0]),
+  maintenance:false,
+  readOnly:false,
+  banner:"",
+  refreshSeconds:60,
+  thresholds:{cpu:70,disk:80,wan:85},
+  audit:[]
+};
+
+function cloneConfig(obj){return JSON.parse(JSON.stringify(obj));}
+function escapeHtml(v){
+  return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+}
+function loadAdminConfig(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(ADMIN_STORAGE_KEY)||"{}");
+    const merged={...cloneConfig(DEFAULT_ADMIN_CONFIG),...saved};
+    merged.thresholds={...DEFAULT_ADMIN_CONFIG.thresholds,...(saved.thresholds||{})};
+    merged.visibleTabs=Array.isArray(saved.visibleTabs)?saved.visibleTabs:DEFAULT_ADMIN_CONFIG.visibleTabs;
+    merged.connectors=Array.isArray(saved.connectors)?saved.connectors:[];
+    merged.audit=Array.isArray(saved.audit)?saved.audit:[];
+    return merged;
+  }catch(e){return cloneConfig(DEFAULT_ADMIN_CONFIG);}
+}
+function storeAdminConfig(config){localStorage.setItem(ADMIN_STORAGE_KEY,JSON.stringify(config));}
+function addAudit(action){
+  const cfg=loadAdminConfig();
+  cfg.audit.unshift({time:new Date().toLocaleString(),action});
+  cfg.audit=cfg.audit.slice(0,80);
+  storeAdminConfig(cfg);
+}
+function isAdminAuthed(){return sessionStorage.getItem(ADMIN_SESSION_KEY)==="1";}
+function adminLogin(){
+  const user=document.getElementById("admin-user").value.trim();
+  const pass=document.getElementById("admin-pass").value;
+  const msg=document.getElementById("admin-login-msg");
+  if(user==="webmaster"&&pass==="fnu-admin"){
+    sessionStorage.setItem(ADMIN_SESSION_KEY,"1");
+    msg.textContent="";
+    addAudit("Webmaster signed in");
+    renderAdmin();
+  }else{msg.textContent="Invalid webmaster credentials";}
+}
+function adminLogout(){
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  addAudit("Webmaster signed out");
+  renderAdmin();
+}
+function renderAdmin(){
+  const cfg=loadAdminConfig();
+  const login=document.getElementById("admin-login");
+  const consoleEl=document.getElementById("admin-console");
+  if(!login||!consoleEl)return;
+  login.style.display=isAdminAuthed()?"none":"block";
+  consoleEl.style.display=isAdminAuthed()?"grid":"none";
+  document.getElementById("admin-kpi-connectors").textContent=cfg.connectors.length;
+  document.getElementById("admin-kpi-enabled").textContent=cfg.visibleTabs.length;
+  document.getElementById("admin-kpi-refresh").textContent=`${cfg.refreshSeconds||60}s`;
+  document.getElementById("admin-kpi-maint").textContent=cfg.maintenance?"ON":"OFF";
+  document.getElementById("admin-maintenance").checked=!!cfg.maintenance;
+  document.getElementById("admin-readonly").checked=!!cfg.readOnly;
+  document.getElementById("admin-banner").value=cfg.banner||"";
+  document.getElementById("admin-refresh").value=cfg.refreshSeconds||60;
+  document.getElementById("threshold-cpu").value=cfg.thresholds.cpu;
+  document.getElementById("threshold-disk").value=cfg.thresholds.disk;
+  document.getElementById("threshold-wan").value=cfg.thresholds.wan;
+  renderVisibilityList(cfg);
+  renderConnectorList(cfg);
+  renderAuditLog(cfg);
+}
+function renderVisibilityList(cfg){
+  document.getElementById("admin-visibility-list").innerHTML=ADMIN_TABS.map(([id,label])=>`
+    <div class="toggle-row">
+      <label><input type="checkbox" data-admin-tab="${id}" ${cfg.visibleTabs.includes(id)?"checked":""} onchange="saveDashboardVisibility()"> ${escapeHtml(label)}</label>
+      <span class="sbadge ${cfg.visibleTabs.includes(id)?"bg":"boff"}">${cfg.visibleTabs.includes(id)?"SHOW":"HIDE"}</span>
+    </div>`).join("");
+}
+function saveDashboardVisibility(){
+  const cfg=loadAdminConfig();
+  cfg.visibleTabs=Array.from(document.querySelectorAll("[data-admin-tab]:checked")).map(el=>el.dataset.adminTab);
+  if(!cfg.visibleTabs.includes("overview"))cfg.visibleTabs.unshift("overview");
+  storeAdminConfig(cfg);
+  addAudit(`Dashboard visibility updated (${cfg.visibleTabs.length} tabs visible)`);
+  renderAdmin();
+  applyDashboardVisibility();
+}
+function applyDashboardVisibility(){
+  const cfg=loadAdminConfig();
+  ADMIN_TABS.forEach(([id])=>{
+    const btn=Array.from(document.querySelectorAll(".tab-btn")).find(b=>b.getAttribute("onclick")===`showTab('${id}')`);
+    const section=document.getElementById(`tab-${id}`);
+    const visible=cfg.visibleTabs.includes(id);
+    if(btn)btn.style.display=visible?"":"none";
+    if(section&&!visible)section.classList.remove("active");
+  });
+  if(!document.querySelector(".section.active"))showTab("overview");
+}
+function saveAdminSettings(){
+  const cfg=loadAdminConfig();
+  cfg.maintenance=document.getElementById("admin-maintenance").checked;
+  cfg.readOnly=document.getElementById("admin-readonly").checked;
+  cfg.banner=document.getElementById("admin-banner").value.trim();
+  cfg.refreshSeconds=Math.max(15,Number(document.getElementById("admin-refresh").value)||60);
+  cfg.thresholds={
+    cpu:Number(document.getElementById("threshold-cpu").value)||70,
+    disk:Number(document.getElementById("threshold-disk").value)||80,
+    wan:Number(document.getElementById("threshold-wan").value)||85
+  };
+  storeAdminConfig(cfg);
+  addAudit("Administration settings updated");
+  renderAdmin();
+  renderMaintenanceBanner();
+}
+function renderMaintenanceBanner(){
+  const cfg=loadAdminConfig();
+  const old=document.getElementById("site-maint-banner");
+  if(old)old.remove();
+  if(!cfg.maintenance&&!cfg.banner)return;
+  const header=document.querySelector("header");
+  const div=document.createElement("div");
+  div.id="site-maint-banner";
+  div.className="notice";
+  div.style.margin="8px 16px 0";
+  div.innerHTML=`<span class="cgold">ADMIN NOTICE:</span> ${escapeHtml(cfg.banner||"Maintenance mode is enabled.")} ${cfg.readOnly?'<span class="sbadge ba" style="margin-left:8px">READ ONLY</span>':""}`;
+  header.insertAdjacentElement("afterend",div);
+}
+function connectorPayload(){
+  return {
+    id:`api-${Date.now()}`,
+    name:document.getElementById("api-name").value.trim(),
+    platform:document.getElementById("api-platform").value,
+    method:document.getElementById("api-method").value,
+    url:document.getElementById("api-url").value.trim(),
+    auth:document.getElementById("api-auth").value,
+    token:document.getElementById("api-token").value,
+    target:document.getElementById("api-target").value,
+    notes:document.getElementById("api-notes").value.trim(),
+    enabled:true,
+    lastStatus:"PENDING",
+    lastChecked:"Never"
+  };
+}
+function addApiConnector(){
+  const api=connectorPayload();
+  if(!api.name||!api.url){
+    document.getElementById("api-test-result").textContent="Name and endpoint URL are required";
+    return;
+  }
+  const cfg=loadAdminConfig();
+  cfg.connectors.unshift(api);
+  storeAdminConfig(cfg);
+  ["api-name","api-url","api-token","api-notes"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("api-test-result").textContent="Connector added";
+  addAudit(`API connector added: ${api.name}`);
+  renderAdmin();
+  renderApiMonitor();
+}
+function apiHeaders(api){
+  const headers={};
+  if(api.auth==="Bearer Token"&&api.token)headers.Authorization=`Bearer ${api.token}`;
+  if(api.auth==="API Key Header"&&api.token)headers["X-API-Key"]=api.token;
+  if(api.auth==="Basic"&&api.token)headers.Authorization=`Basic ${btoa(api.token)}`;
+  return headers;
+}
+async function testApiConnector(id){
+  const cfg=loadAdminConfig();
+  const api=id?cfg.connectors.find(c=>c.id===id):connectorPayload();
+  const out=document.getElementById("api-test-result");
+  if(!api||!api.url){if(out)out.textContent="Endpoint URL is required";return;}
+  if(out)out.textContent="Testing...";
+  try{
+    const res=await fetch(api.url,{method:api.method||"GET",headers:apiHeaders(api)});
+    api.lastStatus=res.ok?`OK ${res.status}`:`WARN ${res.status}`;
+    api.lastChecked=new Date().toLocaleTimeString();
+    if(out)out.textContent=api.lastStatus;
+  }catch(e){
+    api.lastStatus="CORS / NETWORK";
+    api.lastChecked=new Date().toLocaleTimeString();
+    if(out)out.textContent="Blocked by CORS or network";
+  }
+  if(id){
+    const idx=cfg.connectors.findIndex(c=>c.id===id);
+    if(idx>=0)cfg.connectors[idx]=api;
+    storeAdminConfig(cfg);
+    addAudit(`API connector tested: ${api.name} (${api.lastStatus})`);
+    renderAdmin();
+    renderApiMonitor();
+  }
+}
+function toggleApiConnector(id){
+  const cfg=loadAdminConfig();
+  const api=cfg.connectors.find(c=>c.id===id);
+  if(api){api.enabled=!api.enabled;addAudit(`${api.enabled?"Enabled":"Disabled"} connector: ${api.name}`);}
+  storeAdminConfig(cfg);
+  renderAdmin();
+  renderApiMonitor();
+}
+function deleteApiConnector(id){
+  const cfg=loadAdminConfig();
+  const api=cfg.connectors.find(c=>c.id===id);
+  cfg.connectors=cfg.connectors.filter(c=>c.id!==id);
+  storeAdminConfig(cfg);
+  addAudit(`Deleted connector: ${api?api.name:id}`);
+  renderAdmin();
+  renderApiMonitor();
+}
+function renderConnectorList(cfg){
+  const list=document.getElementById("admin-api-list");
+  if(!cfg.connectors.length){
+    list.innerHTML=`<div class="cdim" style="font-family:var(--mono);font-size:10px">No API connectors configured yet.</div>`;
+    return;
+  }
+  list.innerHTML=cfg.connectors.map(api=>`
+    <div class="admin-row">
+      <div>
+        <div class="admin-row-title">${escapeHtml(api.name)} <span class="sbadge ${api.enabled?"bg":"boff"}">${api.enabled?"ENABLED":"OFF"}</span></div>
+        <div class="admin-row-meta">${escapeHtml(api.platform)} / ${escapeHtml(api.method)} / ${escapeHtml(api.target)}<br>${escapeHtml(api.url)}<br>Status: ${escapeHtml(api.lastStatus)} at ${escapeHtml(api.lastChecked)}</div>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-btn alt" onclick="testApiConnector('${api.id}')">TEST</button>
+        <button class="admin-btn" onclick="toggleApiConnector('${api.id}')">${api.enabled?"DISABLE":"ENABLE"}</button>
+        <button class="admin-btn danger" onclick="deleteApiConnector('${api.id}')">DELETE</button>
+      </div>
+    </div>`).join("");
+}
+function renderApiMonitor(){
+  const cfg=loadAdminConfig();
+  const list=document.getElementById("api-monitor-list");
+  const count=document.getElementById("api-monitor-count");
+  const shown=cfg.connectors.filter(c=>c.enabled&&c.target!=="Admin Only");
+  if(count)count.textContent=`${shown.length} CONNECTORS`;
+  if(!list)return;
+  if(!shown.length){
+    list.innerHTML=`<div class="cdim" style="font-family:var(--mono);font-size:10px">No external API feeds selected for dashboard display.</div>`;
+    return;
+  }
+  list.innerHTML=shown.map(api=>{
+    const cls=api.lastStatus&&api.lastStatus.startsWith("OK")?"bg":api.lastStatus==="PENDING"?"ba":"br";
+    return `<div class="admin-kpi">
+      <div class="l">${escapeHtml(api.platform)} / ${escapeHtml(api.target)}</div>
+      <div class="k cgold" style="font-size:13px;margin-top:4px">${escapeHtml(api.name)}</div>
+      <div style="margin-top:7px"><span class="sbadge ${cls}">${escapeHtml(api.lastStatus||"PENDING")}</span></div>
+      <div class="l" style="margin-top:6px">Last check: ${escapeHtml(api.lastChecked||"Never")}</div>
+    </div>`;
+  }).join("");
+}
+function renderAuditLog(cfg){
+  const audit=document.getElementById("admin-audit");
+  audit.innerHTML=(cfg.audit.length?cfg.audit:[{time:"-",action:"No admin activity yet"}]).map(a=>`
+    <div class="log-entry"><span class="log-ts" style="min-width:130px">${escapeHtml(a.time)}</span><span class="log-si">[A]</span><span>${escapeHtml(a.action)}</span></div>`).join("");
+}
+function exportAdminConfig(){
+  const blob=new Blob([JSON.stringify(loadAdminConfig(),null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="fnu-dashboard-admin-config.json";a.click();
+  URL.revokeObjectURL(url);
+  addAudit("Exported admin configuration");
+  renderAdmin();
+}
+function importAdminConfig(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const cfg={...cloneConfig(DEFAULT_ADMIN_CONFIG),...JSON.parse(reader.result)};
+      storeAdminConfig(cfg);
+      addAudit("Imported admin configuration");
+      renderAdmin();renderApiMonitor();applyDashboardVisibility();renderMaintenanceBanner();
+    }catch(e){alert("Invalid configuration file");}
+  };
+  reader.readAsText(file);
+  event.target.value="";
+}
+function resetAdminConfig(){
+  if(!confirm("Reset all local admin configuration?"))return;
+  storeAdminConfig(cloneConfig(DEFAULT_ADMIN_CONFIG));
+  addAudit("Reset admin configuration");
+  renderAdmin();renderApiMonitor();applyDashboardVisibility();renderMaintenanceBanner();
+}
+function getApiContext(){
+  const cfg=loadAdminConfig();
+  const active=cfg.connectors.filter(c=>c.enabled);
+  if(!active.length)return "No external API connectors configured.";
+  return active.map(c=>`${c.name} (${c.platform}) target=${c.target}, status=${c.lastStatus}, notes=${c.notes||"none"}`).join("; ");
+}
+
 function renderNetDev(){
   document.getElementById("netdev-tbody").innerHTML=NET_DEVICES.map(d=>`<tr>
     <td style="color:#ccd6f6;font-weight:600">&#x1F500; ${d.name}</td>
@@ -1113,6 +1602,8 @@ SOC: Threat level ELEVATED. 1,247 threats blocked today. 34 phishing. 8 malware.
 
 SERVICES: SIMS ONLINE (34ms), Moodle ONLINE (62ms, storage 78% WARN), Exchange DEGRADED, Teams/SharePoint ONLINE, Nutanix HEALTHY, Veeam backup OK.
 
+EXTERNAL API CONNECTORS: ${getApiContext()}
+
 Respond as a senior NOC/SOC analyst. Be concise, technical, and actionable. Use markdown. Reference device names, IPs, and data. FNU = Fiji National University.`;
 }
 
@@ -1192,6 +1683,10 @@ renderAlerts();
 renderCampus();
 renderGPLabs();
 renderEP();
+renderAdmin();
+renderApiMonitor();
+applyDashboardVisibility();
+renderMaintenanceBanner();
 </script>
 </body>
 </html>
